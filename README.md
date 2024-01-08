@@ -5,7 +5,7 @@ Welcome to the coolest API in town! Here, we take authentication and user profil
 
 ## Token Generation 🔐
 
-### `POST /token/`
+### `POST /auth/token/`
 
 Generate a magic token to access our wonderland. Send your email and password to get the golden key.
 
@@ -30,7 +30,7 @@ Generate a magic token to access our wonderland. Send your email and password to
 Pro Tip: Don't forget your token; it's the secret sauce to unlock the treasures!
 
 ## Logout 🚪
-## POST /logout/
+## POST /auth/logout/
 Time to say goodbye. Use this endpoint to log out gracefully and secure the castle.
 ### Request:
 {}  # No need for any payload, just hit the endpoint.
@@ -45,7 +45,7 @@ Time to say goodbye. Use this endpoint to log out gracefully and secure the cast
 Farewell, brave adventurer! Your session has ended.
 
 ## User Profile 🧑‍🚀
-## GET /users/me/
+## GET /auth/users/me/
 Retrieve your superhero profile details. Only for the chosen ones with a valid token.
 
 ### Response:
@@ -63,7 +63,7 @@ Retrieve your superhero profile details. Only for the chosen ones with a valid t
 }
 ```
 
-## PUT /users/me/
+## PUT /auth/users/me/
 Update your superhero profile. Because even superheroes need a makeover!
 
 Request:
@@ -92,7 +92,7 @@ Request:
 ```
 
 # Create New User 🦸‍♂️
-## POST /users/
+## POST /auth/users/
 Join the league of extraordinary individuals. Create your account and become a hero!
 
 ### Request:
