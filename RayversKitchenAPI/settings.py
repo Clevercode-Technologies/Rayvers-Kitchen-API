@@ -48,7 +48,6 @@ INSTALLED_APPS = [
     # User Defined Apps
     "app",
     "authentication",
-
 ]
 
 # CUSTOM USER MODEL
