@@ -6,7 +6,6 @@ charset-normalizer==3.3.1
 Django==4.2.9
 djangorestframework==3.14.0
 idna==3.4
-mysqlclient==2.2.1
 pillow==10.2.0
 pycparser==2.21
 pydantic==2.5.3
