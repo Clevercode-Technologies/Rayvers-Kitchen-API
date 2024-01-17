@@ -27,11 +27,17 @@ from .helpers import check_email, is_valid_password
 User = get_user_model()
 
 
+# ------------------------------- Home views -----------------------------------
+class HomeAPIAuthViewList(APIView):
+    def get(self, request):
+        return Response({"message": "Welcome to Reyvers Kitchen Auth service API"})
+
+
 class CustomAuthToken(APIView):
-    throttle_classes = ()
-    permission_classes = ()
-    parser_classes = (parsers.FormParser, parsers.MultiPartParser, parsers.JSONParser,)
-    renderer_classes = (renderers.JSONRenderer,)
+    throttle_classes = []
+    permission_classes = []
+    parser_classes = [parsers.FormParser, parsers.MultiPartParser, parsers.JSONParser]
+    renderer_classes = [renderers.JSONRenderer]
     serializer_class = CustomAuthTokenSerializer
 
     if coreapi_schema.is_enabled():
@@ -217,7 +223,6 @@ def create_new_user(request):
                         "email": user.email,
                         "token": user.auth_token.key,
                     }
-
                     if user:
                         return Response(user_details, status=status.HTTP_201_CREATED)
                 else:

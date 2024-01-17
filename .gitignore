@@ -3,9 +3,9 @@ venv
 .env
 .env.loc
 
+venv
+.env
 
 .DS_Store
 
-
-
-
+__pycache__

@@ -5,6 +5,7 @@ from . import views
 app_name = "authentication"
 
 urlpatterns = [
+    path('', views.HomeAPIAuthViewList.as_view(), name="general_api_view"),
     path("token/", views.CustomAuthToken.as_view(), name="token"),
     path("logout/", views.logoutView, name="logout"),
     path("users/", views.create_new_user, name="create_user"),
