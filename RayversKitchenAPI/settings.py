@@ -98,6 +98,8 @@ DATABASES = {
 }
 
 
+# Solve foreign key constraints..
+
 # DATABASES = {
 #   'default': {
 #     'ENGINE': 'django.db.backends.mysql',
