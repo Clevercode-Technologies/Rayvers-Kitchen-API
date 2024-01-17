@@ -12,6 +12,11 @@ from .managers import CustomUserManager
 
 
 class User(AbstractBaseUser, PermissionsMixin):
+    USER_OPTIONS = [
+        ("customer", "customer"),
+        ("chef", "chef"),
+        ("logistics", "logistics")
+    ]
     AUTHENTICATION_PROVIDERS = [
         ("email", "email"),
         ("google", "google"),
@@ -19,6 +24,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         ("twitter", "twitter"),
     ]
     email = models.EmailField(_("email address"), unique=True)
+    role = models.CharField(choices=USER_OPTIONS, max_length=10, default="customer", verbose_name="Who Am I?")
     provider = models.CharField(choices=AUTHENTICATION_PROVIDERS, default="email", max_length=10)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
@@ -63,6 +69,26 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.email}'s profile"
+
+
+
+
+# class Address(models.Model):
+#     user = models.ForeignKey(User, on_delete=models.CASCADE)
+#     address_type_choices = [
+#         ('HOME', 'Home'),
+#         ('WORK', 'Work'),
+#         ('OTHER', 'Other'),
+#     ]
+#     address_type = models.CharField(max_length=10, choices=address_type_choices)
+#     street_address = models.CharField(max_length=255)
+#     city = models.CharField(max_length=100)
+#     state = models.CharField(max_length=100)
+#     postal_code = models.CharField(max_length=20)
+
+#     def __str__(self):
+#         return f"{self.get_address_type_display()} Address for {self.user.username}"
+
 
 
 # User Address
