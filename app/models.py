@@ -1,6 +1,8 @@
 # models.py
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 User = get_user_model()
 
@@ -12,24 +14,34 @@ class Category(models.Model):
         return self.name
 
 class Restaurant(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     description = models.TextField()
     ratings = models.IntegerField(default=0)
     # Other fields as needed will be here...
 
     def __str__(self):
-        return self.name
+        return f"Restaurant: {self.user.email}"
     
     class Meta:
         verbose_name_plural = "Restaurants"
         verbose_name = "Restaurant"
+
+# Listens for chef that was created
+@receiver(post_save, sender=User)
+def create_restaurant(sender, instance=None, created=False, **kwargs):
+    if instance.role == "chef":
+        # Create a chef here
+        Restaurant.objects.create(user=instance)
+        print("A Chef was created")
+        
 
 class Dish(models.Model):
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField()
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="dish_category") 
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    restaurant = models.ManyToManyField(Restaurant, related_name="restaurants", blank=True)
+    restaurant = models.ForeignKey(Restaurant, related_name="restaurants", on_delete=models.CASCADE)
     ratings = models.IntegerField(default=0)
     favourite = models.ManyToManyField(User, related_name="favourites", blank=True)
     # Add other fields as needed...
@@ -59,7 +71,7 @@ class Order(models.Model):
     payment_status = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"Order #{self.id} by {self.user.username}"
+        return f"Order #{self.id} by {self.user.email}"
     
     class Meta:
         verbose_name_plural = "Orders"
@@ -79,18 +91,28 @@ class OrderItem(models.Model):
 
 class Driver(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE)
-    vehicle_number = models.CharField(max_length=20)
-    available = models.BooleanField(default=True)
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.SET_NULL, blank=True, null=True)
+    vehicle_color = models.CharField(max_length=40)
+    vehicle_description = models.TextField(blank=True)
+    vehicle_number = models.CharField(max_length=40)
+    available = models.BooleanField(default=False)
     current_location_latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     current_location_longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
 
     def __str__(self):
-        return f"Driver: {self.user.username}"
+        return f"Driver: {self.user.email}"
     
     class Meta:
         verbose_name_plural = "Drivers"
         verbose_name = "Driver"
+
+@receiver(post_save, sender=User)
+def create_driver(sender, instance=None, created=False, **kwargs):
+    if instance.role == "logistics":
+        # Create a driver here
+        Driver.objects.create(user=instance)
+        print("A driver was created")
+        
 
 class DeliveryStatus(models.Model):
     order = models.OneToOneField(Order, on_delete=models.CASCADE)
@@ -114,7 +136,7 @@ class ShoppingCart(models.Model):
     items = models.ManyToManyField(Dish, through='CartItem')
 
     def __str__(self):
-        return f"Shopping Cart for {self.user.username}"
+        return f"Shopping Cart for {self.user.email}"
     
     class Meta:
         verbose_name_plural = "Shopping Cart"
@@ -141,7 +163,7 @@ class Payment(models.Model):
     payment_date = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Payment for Order #{self.order.id} via {self.payment_method} by {self.user.username}"
+        return f"Payment for Order #{self.order.id} via {self.payment_method} by {self.user.email}"
 
     class Meta:
         verbose_name_plural = "Payments"
@@ -153,7 +175,7 @@ class PersonalMessage(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Message from {self.sender.username} to {self.receiver.username}"
+        return f"Message from {self.sender.email} to {self.receiver.email}"
     
     class Meta:
         verbose_name_plural = "Personal Messages"

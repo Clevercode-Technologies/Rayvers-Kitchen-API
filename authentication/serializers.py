@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
-from .models import UserProfile
+from .models import UserProfile, UserAddress
 
 User = get_user_model()
 
@@ -42,6 +42,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 class UserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
     class Meta:
         model = User
         fields = [
@@ -53,6 +55,32 @@ class UserSerializer(serializers.ModelSerializer):
             "user_permissions",
             "last_login",
             "is_superuser",
+            "role",
+            "password",
+        ]
+
+    def create(self, validated_data):
+        # Hash the password before saving the user
+        password = validated_data.pop('password', None)
+        user = super().create(validated_data)
+        if password:
+            user.set_password(password)
+            user.save()
+        return user
+
+
+# Serializer used to update the current user's address
+class UserAddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserAddress
+        fields = [
+            "id",
+            "user",
+            "address",
+            "street",
+            "post_code",
+            "apartment",
+            "labelled_place",
         ]
 
 

@@ -17,8 +17,30 @@ class DishSerializer(serializers.ModelSerializer):
     def get_category(self):
         return self.fields['category'].to_representation(self.instance.category)
 
+class RestaurantSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Restaurant
+        fields = [
+            'id',
+            'name',
+            'description',
+            'ratings',
+        ]
 
-
+class DriverSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Driver
+        fields = [
+            'id',
+            'user',
+            'restaurant',
+            'vehicle_color',
+            'vehicle_description',
+            'vehicle_number',
+            'available',
+            'current_location_latitude',
+            'current_location_longitude',
+        ]
     
 
 

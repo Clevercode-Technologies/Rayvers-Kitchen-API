@@ -10,7 +10,6 @@ from rest_framework.authtoken.models import Token
 from .managers import CustomUserManager
 
 
-
 class User(AbstractBaseUser, PermissionsMixin):
     USER_OPTIONS = [
         ("customer", "customer"),
@@ -71,8 +70,6 @@ class UserProfile(models.Model):
         return f"{self.user.email}'s profile"
 
 
-
-
 # class Address(models.Model):
 #     user = models.ForeignKey(User, on_delete=models.CASCADE)
 #     address_type_choices = [
@@ -100,10 +97,10 @@ class UserAddress(models.Model):
     ]
     user = models.ForeignKey(User, related_name="addresses", on_delete=models.CASCADE)
     address = models.TextField(blank=True, null=True)
-    street = models.CharField(max_length=100, blank=True, null=True)
-    post_code = models.CharField(max_length=30, blank=True, null=True)
-    apartment = models.CharField(max_length=50, blank=True, null=True)
-    labelled_place = models.CharField(choices=LABELLED_PLACES, max_length=10, blank=True, null=True)
+    street = models.CharField(max_length=100, blank=True, null=False)
+    post_code = models.CharField(max_length=30, blank=True, null=False)
+    apartment = models.CharField(max_length=50, blank=True, null=False)
+    labelled_place = models.CharField(choices=LABELLED_PLACES, max_length=10, blank=False, null=False)
 
     class Meta:
         verbose_name_plural = "User Addresses"

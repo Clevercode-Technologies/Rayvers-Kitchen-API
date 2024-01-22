@@ -7,9 +7,17 @@ from rest_framework.response import Response
 from rest_framework.schemas import coreapi as coreapi_schema
 from rest_framework.compat import coreapi, coreschema
 from rest_framework.schemas import ManualSchema
-from .serializers import CustomAuthTokenSerializer, UserProfileSerializer, UserSerializer
+from .serializers import (
+    CustomAuthTokenSerializer, 
+    UserProfileSerializer, 
+    UserSerializer, 
+    UserAddressSerializer,
+)
 
-from .models import UserProfile
+from .models import (
+    UserProfile, 
+    UserAddress,
+)
 
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
@@ -149,6 +157,8 @@ def get_current_user_profile(request):
                 "is_active": user.is_active,
                 "profile_picture": user.profile.get_image_url,
                 "bio": user.profile.bio,
+                "role": user.role,
+
             }
             return Response(userData, status=status.HTTP_200_OK)
         else:
@@ -166,8 +176,96 @@ def get_current_user_profile(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     else:
-        return Response({"message": "Http Method not allowed."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "Method not allowed."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
                                 
+
+
+# Current user address view
+@api_view(['GET', 'POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def current_user_address_view(request):
+    if request.method == 'GET':
+        user_addresses = UserAddress.objects.filter(user=request.user)
+        
+        serializer = UserAddressSerializer(user_addresses, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    elif request.method == 'POST': 
+        
+        user_address_exists = UserAddress.objects.filter(
+            user=request.user, 
+            labelled_place=request.data.get("labelled_place")
+        )
+        if len(user_address_exists) > 0:
+            return Response({"detail": "Labelled place already exists"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user_address_details = {
+            "user": request.user.id,
+            "address": request.data.get("address", None),
+            "street": request.data.get("street", None),
+            "post_code": request.data.get("post_code", None),
+            "apartment": request.data.get("apartment", None),
+            "labelled_place": request.data.get("labelled_place", None),
+        }
+        serializer = UserAddressSerializer(data=user_address_details)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_200_OK)
+
+    return Response({"detail": "Method not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+@api_view(['GET', 'PUT', 'DELETE'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def detail_user_address_view(request, pk):
+    if request.method == 'GET':
+        try:
+            user_address = UserAddress.objects.get(pk=pk)
+            serializer = UserAddressSerializer(user_address)
+            return Response(serializer.data, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        except UserAddress.DoesNotExist:
+            return Response({"detail": "user address not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+    elif request.method == 'PUT':
+        # Check if the requesting user is the owner of the address
+        user_address = UserAddress.objects.get(pk=pk)
+        user_address_data = {
+            "id": user_address.id,
+            "user": request.user.id,
+            "address": request.data.get("address"),
+            "street": request.data.get("street"),
+            "post_code": request.data.get("post_code"),
+            "apartment": request.data.get("apartment"),
+            "labelled_place": user_address.labelled_place
+        }
+        if user_address.labelled_place != request.data.get("labelled_place"):
+            return Response({"detail": "Label must match"}, status=status.HTTP_400_BAD_REQUEST)
+        if user_address.user != request.user:
+            return Response({"detail": "User does not have permission to edit content"}, status=status.HTTP_401_UNAUTHORIZED)
+        else:
+            serializer = UserAddressSerializer(instance=user_address, data=user_address_data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    elif request.method == 'DELETE':
+        # Check if the requesting user is the owner of the address
+        try:
+            user_address = UserAddress.objects.get(pk=pk)
+            if user_address.user != request.user:
+                return Response({"detail": "User does not have permission to delete content"}, status=status.HTTP_401_UNAUTHORIZED)
+            else:
+                user_address.delete()
+                return Response({}, status=status.HTTP_204_NO_CONTENT)
+        except UserAddress.DoesNotExist:
+            return Response({"detail": "user address not found"}, status=status.HTTP_404_NOT_FOUND)
+    else:
+        return Response({"detail": "Method not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+    
 
 
 @api_view(['POST'])
@@ -217,18 +315,23 @@ def create_new_user(request):
                 # Finally create user Create user
                 serializer = UserSerializer(data=request.data)
                 if serializer.is_valid():
-                    user = User.objects.create_user(email=email, password=password)
+                    serializer.save()
                     user_details = {
-                        "user_id": user.id,
-                        "email": user.email,
-                        "token": user.auth_token.key,
+                        "user_id": serializer.data.get("id"),
+                        "email": serializer.data.get("email"),
+                        "is_staff": serializer.data.get("is_staff"),
+                        "last_login": serializer.data.get("last_login"),
+                        "user_permissions": serializer.data.get("user_permissions"),
+                        "is_superuser": serializer.data.get("is_superuser"),
+                        "role": serializer.data.get("role"),
+                        "token":  User.objects.get(id=serializer.data.get("id")).auth_token.key,
+                        "password": User.objects.get(id=serializer.data.get("id")).password
                     }
-                    if user:
-                        return Response(user_details, status=status.HTTP_201_CREATED)
+                    return Response(user_details, status=status.HTTP_201_CREATED)
                 else:
                     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     else:
-        return Response({ "detail": "Http method not allowed." })
+        return Response({ "detail": "Http method not allowed." }, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     
 
