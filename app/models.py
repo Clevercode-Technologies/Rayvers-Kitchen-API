@@ -3,18 +3,29 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils.translation import gettext_lazy as _
+# from .utils import generate_random_username
+import random
+import string
 
 User = get_user_model()
+
+def generate_random_username(length, max_attempts=100):
+    for _ in range(max_attempts):
+        random_username = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(length))
+        if not User.objects.filter(username=random_username).exists():
+            return random_username
+    raise ValueError('Could not generate a unique username after {} attempts'.format(max_attempts))
 
 class Category(models.Model):
     name = models.CharField(max_length=255, unique=True, blank=False, null=False)
     
-
     def __str__(self):
         return self.name
 
 class Restaurant(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    kitchen_id = models.CharField(_("Kitchen id"), max_length=20, blank=True, null=False)
     name = models.CharField(max_length=255)
     description = models.TextField()
     ratings = models.IntegerField(default=0)
@@ -30,11 +41,19 @@ class Restaurant(models.Model):
 # Listens for chef that was created
 @receiver(post_save, sender=User)
 def create_restaurant(sender, instance=None, created=False, **kwargs):
-    if instance.role == "chef":
-        # Create a chef here
-        Restaurant.objects.create(user=instance)
-        print("A Chef was created")
-        
+    if created and instance.role == "chef":
+        # Create a restaurant here
+        restaurant = Restaurant.objects.create(user=instance)
+        # Generate a unique username for the restaurant
+        username = generate_random_username(8)
+        while Restaurant.objects.filter(kitchen_id=username).exists():
+            username = generate_random_username(8)
+        # Set the username for the user and the restaurant
+        instance.username = username
+        instance.save()
+        restaurant.kitchen_id = username
+        restaurant.save()
+        print("A restaurant was created")
 
 class Dish(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -91,7 +110,8 @@ class OrderItem(models.Model):
 
 class Driver(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    restaurant = models.ForeignKey(Restaurant, on_delete=models.SET_NULL, blank=True, null=True)
+    driver_id = models.CharField(_("Driver id"), max_length=20, blank=True, null=False)
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, blank=True, null=True)
     vehicle_color = models.CharField(max_length=40)
     vehicle_description = models.TextField(blank=True)
     vehicle_number = models.CharField(max_length=40)
@@ -108,9 +128,18 @@ class Driver(models.Model):
 
 @receiver(post_save, sender=User)
 def create_driver(sender, instance=None, created=False, **kwargs):
-    if instance.role == "logistics":
+    if created and instance.role == "logistics":
         # Create a driver here
-        Driver.objects.create(user=instance)
+        driver = Driver.objects.create(user=instance)
+        # Generate a unique username for the driver
+        username = generate_random_username(8)
+        while Driver.objects.filter(driver_id=username).exists():
+            username = generate_random_username(8)
+        # Set the username for the user and the driver
+        instance.username = username
+        instance.save()
+        driver.driver_id = username
+        driver.save()
         print("A driver was created")
         
 

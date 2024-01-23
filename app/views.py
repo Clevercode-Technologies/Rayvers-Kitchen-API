@@ -297,6 +297,7 @@ class DriversViewList(APIView):
 class DriverViewDetails(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
+    serializer_class = serializers.DriverSerializer
 
     def get(self, request, *args, **kwargs):
         pk = kwargs["pk"]

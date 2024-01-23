@@ -189,7 +189,7 @@ def current_user_address_view(request):
         user_addresses = UserAddress.objects.filter(user=request.user)
         
         serializer = UserAddressSerializer(user_addresses, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
     elif request.method == 'POST': 
         
         user_address_exists = UserAddress.objects.filter(
@@ -225,7 +225,7 @@ def detail_user_address_view(request, pk):
         try:
             user_address = UserAddress.objects.get(pk=pk)
             serializer = UserAddressSerializer(user_address)
-            return Response(serializer.data, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         except UserAddress.DoesNotExist:
             return Response({"detail": "user address not found"}, status=status.HTTP_404_NOT_FOUND)
         
