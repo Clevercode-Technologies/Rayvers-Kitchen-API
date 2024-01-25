@@ -6,7 +6,10 @@ charset-normalizer==3.3.1
 cloudinary==1.38.0
 dj-database-url==2.1.0
 Django==4.2.9
+<<<<<<< HEAD
 django-cloudinary-storage==0.3.0
+=======
+>>>>>>> b02ff7f89e60ef099767afda4069da0252571d3a
 djangorestframework==3.14.0
 idna==3.4
 pillow==10.2.0
