@@ -55,8 +55,14 @@ def create_restaurant(sender, instance=None, created=False, **kwargs):
         restaurant.save()
         print("A restaurant was created")
 
+
+
+class DishThumbnail(models.Model):
+    file = models.ImageField(verbose_name="dish image", upload_to="dishes")
+
 class Dish(models.Model):
     name = models.CharField(max_length=255, unique=True)
+    images = models.ManyToManyField(DishThumbnail, related_name="dish_images")
     description = models.TextField()
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="dish_category") 
     price = models.DecimalField(max_digits=10, decimal_places=2)
