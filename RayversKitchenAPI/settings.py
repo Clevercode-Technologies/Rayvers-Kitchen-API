@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     # Third Parties Apps
+    'cloudinary_storage',
+    'cloudinary',
     "rest_framework",
     "rest_framework.authtoken",
 
@@ -51,6 +53,12 @@ INSTALLED_APPS = [
     "app",
     "authentication",
 ]
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': config('CLOUDINARY_API_KEY'),
+    'API_SECRET': config('CLOUDINARY_API_SECRET')
+}
 
 # CUSTOM USER MODEL
 AUTH_USER_MODEL = 'authentication.User'
@@ -175,8 +183,8 @@ STATICFILE_DIRS = [
 
 STATIC_URL = "/static/"
 
-
 MEDIA_URL = '/media/'
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles', 'static')
 
