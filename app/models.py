@@ -57,12 +57,17 @@ def create_restaurant(sender, instance=None, created=False, **kwargs):
 
 
 
-class DishThumbnail(models.Model):
-    file = models.ImageField(verbose_name="dish image", upload_to="dishes")
+class Image(models.Model):
+    file = models.ImageField(verbose_name="dish image", upload_to="dishes/", blank=False, null=False)
+    label = models.CharField(max_length=255, blank=True, null=False)
+
+    def __str__(self):
+        return self.file.url
+
 
 class Dish(models.Model):
     name = models.CharField(max_length=255, unique=True)
-    images = models.ManyToManyField(DishThumbnail, related_name="dish_images")
+    images = models.ManyToManyField(Image)
     description = models.TextField()
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="dish_category") 
     price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -70,6 +75,14 @@ class Dish(models.Model):
     ratings = models.IntegerField(default=0)
     favourite = models.ManyToManyField(User, related_name="favourites", blank=True)
     # Add other fields as needed...
+
+
+    @property
+    def get_images(self):
+        images = self.images.all()
+        new_list = list(map(lambda x: {"label": x.label, "url":x.file.url}, images))
+        return new_list
+    
 
     @property
     def get_category(self):

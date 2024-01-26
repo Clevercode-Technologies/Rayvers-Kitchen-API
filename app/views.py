@@ -4,6 +4,7 @@ from rest_framework.decorators import api_view, authentication_classes, permissi
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser, FormParser
 
 from .permissions import (
     IsUserChef,
@@ -73,6 +74,7 @@ class CategoryViewDetails(APIView):
     permission_classes = [IsAuthenticated]
 
     serializer_class =  serializers.CategorySerializer
+    parser_classes = [MultiPartParser, FormParser]
 
     def get(self, *args, **kwargs):
         """Returns a category detail and paginated dishes under the category"""

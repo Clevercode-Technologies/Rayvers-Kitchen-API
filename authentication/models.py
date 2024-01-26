@@ -30,6 +30,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(default=timezone.now)
 
+    code = models.IntegerField(blank=True, null=True)
+    is_verified = models.BooleanField(default=False)
+
 
     groups = models.ManyToManyField('auth.Group', blank=True, related_name='custom_users+')
     user_permissions = models.ManyToManyField('auth.Permission', blank=True, related_name='custom_users+')
@@ -54,6 +57,7 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, related_name="profile", on_delete=models.CASCADE, blank=True, null=True)
     name = models.CharField(max_length=30, blank=True, null=True)
     date_of_birth = models.DateField(null=True, blank=True)
+    image_url = models.CharField(max_length=1000, blank=True, null=False)
     profile_picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
     phone_number = models.CharField(max_length=30, blank=True, null=True)
     bio = models.TextField(blank=True, null=True)

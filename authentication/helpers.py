@@ -3,7 +3,8 @@ from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.contrib.auth.password_validation import validate_password
 from pydantic import BaseModel
-
+import random
+import requests
 # Define Pydantic
 class ValidationResult(BaseModel):
     message: str
@@ -49,3 +50,24 @@ def is_valid_password(password: str) -> ValidationResult:
             status=False, 
             error_messages=error_messages
         )
+
+# Generate user 6 digits code
+
+
+def generate_6_digit_code():
+    return str(random.randint(100000, 999999))
+
+
+def send_registration_code_mail(url, code):
+    headers = {
+        "Content-Type": "application/json"
+    }
+    try:
+        response = requests.post(url, data={"userCode": code}, headers=headers)
+        return response.status_code
+    except:
+        return 400
+
+
+
+

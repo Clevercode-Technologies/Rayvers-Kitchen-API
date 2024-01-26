@@ -58,6 +58,7 @@ class UserSerializer(serializers.ModelSerializer):
             "is_superuser",
             "role",
             "password",
+            "code",
         ]
 
     def create(self, validated_data):
