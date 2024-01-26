@@ -12,7 +12,7 @@ class DishSerializer(serializers.ModelSerializer):
     # category = CategorySerializer(read_only=True)
     class Meta:
         model = models.Dish
-        fields = ['id', 'name', 'category', 'description', 'price', 'restaurant', 'ratings', 'favourite']
+        fields = ['id', 'name', 'get_images', 'category', 'description', 'price', 'restaurant', 'ratings', 'favourite']
     
     def get_category(self):
         return self.fields['category'].to_representation(self.instance.category)

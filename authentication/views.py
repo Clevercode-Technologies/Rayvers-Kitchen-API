@@ -29,7 +29,9 @@ from django.contrib.auth import authenticate, login, logout
 
 from django.contrib.auth import get_user_model
 
-from .helpers import check_email, is_valid_password
+import requests
+
+from .helpers import check_email, is_valid_password, generate_6_digit_code, send_registration_code_mail
 
 
 
@@ -160,6 +162,7 @@ def get_current_user_profile(request):
                 "profile_picture": user.profile.get_image_url,
                 "bio": user.profile.bio,
                 "role": user.role,
+                "image_url": user.profile.image_url
             }
             return Response(userData, status=status.HTTP_200_OK)
         else:
@@ -316,7 +319,10 @@ def create_new_user(request):
                 }, status=status.HTTP_400_BAD_REQUEST)
             else:
                 # Finally create user Create user
-                serializer = UserSerializer(data=request.data)
+                data = request.data
+                code = generate_6_digit_code()
+                data.update({"code": code})
+                serializer = UserSerializer(data=data)
                 if serializer.is_valid():
                     serializer.save()
                     user_details = {
@@ -328,8 +334,9 @@ def create_new_user(request):
                         "is_superuser": serializer.data.get("is_superuser"),
                         "role": serializer.data.get("role"),
                         "token":  User.objects.get(id=serializer.data.get("id")).auth_token.key,
-                        "password": User.objects.get(id=serializer.data.get("id")).password
+                        "password": User.objects.get(id=serializer.data.get("id")).password,
                     }
+                    send_registration_code_mail(code)
                     return Response(user_details, status=status.HTTP_201_CREATED)
                 else:
                     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
