@@ -13,6 +13,14 @@ from .helpers import check_email, is_valid_password
 
 User = get_user_model()
 
+from .helpers import (
+    check_email, 
+    is_valid_password, 
+    generate_4_digit_code, 
+    send_registration_code_mail, 
+    check_if_code_matches,
+)
+
 
 # RESTAURANT AUTH VIEWS
 @api_view(['POST'])
@@ -32,12 +40,16 @@ def login_restaurant(request):
     except User.DoesNotExist:
         user = None
         return Response({"detail": "user does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+
     
     try:
-        restaurant = Restaurant.objects.filter(restaurant_id=kitchen_id).first()
+        restaurant = Restaurant.objects.filter(kitchen_id=kitchen_id).first()
     except Restaurant.DoesNotExist:
         restaurant = None
         return Response({"detail": "kitchen does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if not user.is_verified:
+        return Response({"message": "User is not verified"}, status=status.HTTP_401_UNAUTHORIZED)
     
     if user and restaurant:
         # If both a user and a restaurant were found for that username/kitchen_id, check passwords
@@ -46,7 +58,7 @@ def login_restaurant(request):
                 "token": user.auth_token.key, 
                 "user_id": user.id, 
                 "kitchen_id": user.username, 
-                "email": user.email
+                # "email": user.email
             }, status=status.HTTP_200_OK)
         else:
             return Response({"detail": "password is incorrect"}, status=status.HTTP_400_BAD_REQUEST)
@@ -57,8 +69,12 @@ def login_restaurant(request):
 # This api view should only be assessed by admins | only admins can create kitchen
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated & IsAdminUser])
+@permission_classes([IsAdminUser])
 def create_restaurant(request):
+    """
+    Creates Restaurant
+    @payload: email, password
+    """
     data = request.data
     email = data.get("email")
     password = data.get("password")
@@ -106,23 +122,22 @@ def create_restaurant(request):
             }, status=status.HTTP_400_BAD_REQUEST)
         else:
             # Finally create user Create user
-            
-            data.update({"role": "chef"})
+            code = generate_4_digit_code()
+            data.update({"role": "chef", "code": code})
+
             serializer = serializers.UserSerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
                 # Object / Dictionary to be returned after user has been created
                 user_details = {
+                    "message": f"A verification code has been sent to {serializer.data.get('email')}.",
                     "user_id": serializer.data.get("id"),
-                    "email": serializer.data.get("email"),
-                    "is_staff": serializer.data.get("is_staff"),
-                    "last_login": serializer.data.get("last_login"),
-                    "user_permissions": serializer.data.get("user_permissions"),
-                    "is_superuser": serializer.data.get("is_superuser"),
+                    "kitchen_id": serializer.data.get("username"),
                     "role": serializer.data.get("role"),
-                    "token":  User.objects.get(id=serializer.data.get("id")).auth_token.key,
-                    "password": User.objects.get(id=serializer.data.get("id")).password
                 }
+                response_gotten_from_code = send_registration_code_mail(code, serializer.data.get('email'))
+                print("The response status I got from the code registration: ", response_gotten_from_code)
+
                 return Response(user_details, status=status.HTTP_201_CREATED)
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -153,10 +168,18 @@ def login_driver(request):
         driver = None
         return Response({"detail": "driver does not exist"}, status=status.HTTP_400_BAD_REQUEST)
     
+    if not user.is_verified:
+        return Response({"message": "User is not verified"}, status=status.HTTP_401_UNAUTHORIZED)
+    
     if user and driver:
         # If both a user and a driver were found for that username/ID, check passwords
         if user.check_password(password):
-            return Response({"token": user.auth_token.key, "user_id": user.id, "driver_id": user.username, "email": user.email}, status=status.HTTP_200_OK)
+            return Response({
+                "token": user.auth_token.key, 
+                "user_id": user.id, 
+                "driver_id": user.username, 
+                "email": user.email
+            }, status=status.HTTP_200_OK)
         else:
             return Response({"detail": "password is incorrect"}, status=status.HTTP_400_BAD_REQUEST)
     return Response({"detail": "user with driver id does exists"}, status=status.HTTP_400_BAD_REQUEST)

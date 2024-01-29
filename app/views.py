@@ -9,7 +9,8 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from .permissions import (
     IsUserChef,
     IsUserCustomer,
-    IsUserDriver
+    IsUserDriver,
+    IsUserVerified,
 )
 
 
@@ -38,7 +39,7 @@ class HomeAPIViewList(APIView):
 # ------------------------------- Category views -----------------------------------
 class CategoryViewList(APIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsUserVerified]
 
     serializer_class =  serializers.CategorySerializer
     pagination_class = CustomPageNumberPagination
@@ -71,7 +72,7 @@ class CategoryViewList(APIView):
 
 class CategoryViewDetails(APIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsUserVerified]
 
     serializer_class =  serializers.CategorySerializer
     parser_classes = [MultiPartParser, FormParser]
@@ -130,7 +131,7 @@ class CategoryViewDetails(APIView):
 # ------------------------------- Dish views -----------------------------------
 class DishesViewList(APIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsUserVerified]
     serializer_class = serializers.DishSerializer
 
     pagination_class = CustomPageNumberPagination
@@ -176,7 +177,7 @@ class DishesViewList(APIView):
 
 class DishesViewDetails(APIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsUserVerified]
 
     def get(self, *args, **kwargs):
         pk = kwargs["pk"]
@@ -209,7 +210,7 @@ class DishesViewDetails(APIView):
 # ------------------------------- Restaurant views -----------------------------------
 class ResturantViewList(APIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsUserVerified]
     serializer_class = serializers.RestaurantSerializer
 
     def get(self, request):
@@ -237,7 +238,7 @@ class ResturantViewList(APIView):
     
 class RestaurantViewDetails(APIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsUserVerified]
     serializer_class = serializers.RestaurantSerializer
 
     def get(self, request, *args, **kwargs):
@@ -271,7 +272,7 @@ class RestaurantViewDetails(APIView):
 # ------------------------------- Driver views -----------------------------------
 class DriversViewList(APIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsUserVerified]
     serializer_class = serializers.DriverSerializer
 
     def get(self, request):
@@ -298,7 +299,7 @@ class DriversViewList(APIView):
     
 class DriverViewDetails(APIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsUserVerified]
     serializer_class = serializers.DriverSerializer
 
     def get(self, request, *args, **kwargs):
@@ -330,7 +331,7 @@ class DriverViewDetails(APIView):
 
 class OrderViewList(APIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsUserVerified]
 
     def get(self, request):
         # Get the user
@@ -344,7 +345,7 @@ class OrderViewList(APIView):
 
 class OrderViewDetails(APIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsUserVerified]
 
     def get(self, request, pk):
         return Response({"message": "Hello"})

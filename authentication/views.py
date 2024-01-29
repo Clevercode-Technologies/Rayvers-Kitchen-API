@@ -15,6 +15,10 @@ from .serializers import (
     UserAddressSerializer,
 )
 
+from app.permissions import (
+    IsUserVerified
+)
+
 from .models import (
     UserProfile, 
     UserAddress,
@@ -29,9 +33,16 @@ from django.contrib.auth import authenticate, login, logout
 
 from django.contrib.auth import get_user_model
 
+# from asgiref.sync import sync_to_async
 import requests
 
-from .helpers import check_email, is_valid_password, generate_6_digit_code, send_registration_code_mail
+from .helpers import (
+    check_email, 
+    is_valid_password, 
+    generate_4_digit_code, 
+    send_registration_code_mail, 
+    check_if_code_matches,
+)
 
 
 
@@ -44,6 +55,251 @@ class HomeAPIAuthViewList(APIView):
         return Response({"message": "Welcome to Reyvers Kitchen Auth service API"})
 
 
+
+# async_send_registration_code_mail = sync_to_async(send_registration_code_mail_async)
+
+# CREATE NEW USER
+@api_view(['POST'])
+def create_new_user(request):
+    if request.method == 'POST':
+        email = request.data.get("email")
+        password = request.data.get("password")
+        if not email:
+            return Response({
+                "email": [
+                    "This field may not be blank."
+                ]
+            }, status=status.HTTP_400_BAD_REQUEST)
+        elif not password:
+            return Response({
+                "password": [
+                    "This field may not be blank."
+                ]
+            }, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            # Check if email and password are valid entry
+            email_valid_status = check_email(email)
+            password_valid_status = is_valid_password(password)
+            if email_valid_status.status == False:
+                return Response({
+                    "email": [
+                        error_message for error_message in email_valid_status.error_messages
+                    ]
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            if password_valid_status.status == False:
+                return Response({
+                    "password": [
+                        error_message for error_message in password_valid_status.error_messages
+                    ]
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Lastly Check if user already exists
+            existing_user = User.objects.filter(email=email)
+            if len(existing_user) > 1 or existing_user:
+                return Response({
+                    "email": [
+                        "User with email already exists."
+                    ]
+                }, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                # Finally create user Create user
+                data = request.data
+                code = generate_4_digit_code()
+                data.update({"code": code})
+                serializer = UserSerializer(data=data)
+                if serializer.is_valid():
+                    serializer.save()
+                    user_details = {
+                        "message": f"A verification code has been sent to {serializer.data.get('email')}.",
+                        "user_id": serializer.data.get("id"),
+                        "email": serializer.data.get("email"),
+                        "role": serializer.data.get("role"),
+                    }
+                    
+                    response_gotten_from_code = send_registration_code_mail(code, user_details["email"])
+                    print("The response status I got from the code registration: ", response_gotten_from_code)
+
+                    return Response(user_details, status=status.HTTP_201_CREATED)
+                else:
+                    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        return Response({ "detail": "Http method not allowed." }, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+
+# Verify user registration
+@api_view(['POST'])
+def verify_user_upon_registration(request):
+    """Verifies a user upon registration using the provided code"""
+    data = request.data
+    code = data.get("code")
+    user_id = data.get("user_id")
+
+    # print("Data type for code: ", type(code))
+    # print("Data type for user_id: ", type(user_id))
+
+    # Check if user exists in database
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        print("something wrong occurred --- User does not exist.")
+        return Response({"message": "User does not exist."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        is_correct_code = check_if_code_matches(user.code, code)
+        if is_correct_code:
+            user.is_verified = True
+            user.code = None
+            user.save()
+            return Response({
+                "message": "Account has been verified successfully. Proceed to login.",
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({"message": "User code is invalid"}, status=status.HTTP_400_BAD_REQUEST)
+    except AssertionError:
+        print("Values must be valid integers")
+        return Response({"message": "Values must be valid integers"}, status=status.HTTP_400_BAD_REQUEST)
+
+# Retry Verify user registration
+@api_view(['POST'])
+def verify_user_retry_code(request):
+    """
+    Resend verification code to user mail
+    All that is needed to perform this task is the user_id
+    """
+    data = request.data
+    user_id = data.get("user_id")
+    # Generate and send new profile code
+    code_generated = generate_4_digit_code()
+
+    # Check if user exists
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        print("User does not exist.")
+        return Response({"message": "Invalid user id. User does not exist."}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Send some code to user email
+    user.code = code_generated
+    user.save()
+
+    response_gotten_from_code = send_registration_code_mail(code_generated, user.email)
+    if response_gotten_from_code == 200:
+        return Response({"message": "Code was resent to your email"}, status=status.HTTP_200_OK)
+    else:
+        # Here the status code could be any respond coming from email backend
+        return Response({"message": "Encountered an issue sending email. Retry!"}, status=response_gotten_from_code)
+    
+
+    
+# Forget Password view
+@api_view(['POST'])
+def forget_password_view_email(request):
+    """
+    This view sends password reset code to user's email
+    
+    """
+    # Get user email
+    data = request.data
+    email = data.get("email")
+    code_generated = generate_4_digit_code()
+    # Check if user with email exists in the database
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        return Response({"message": "User with email does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Set the code in the user email
+    user.code = code_generated
+    user.save()
+
+    # Here we should sent a verification code to user for confirmation of their identity
+    # Send code verification to provided email
+    response_gotten_from_code = send_registration_code_mail(code_generated, email)
+
+    # Return a response
+    if response_gotten_from_code == 200:
+        return Response({"message": "Code was sent to your email", "user_id": user.id}, status=status.HTTP_200_OK)
+    else:
+        # Here the status code could be any respond coming from email backend
+        return Response({"message": "Encountered an issue sending email. Retry!", "user_id": user.id}, status=response_gotten_from_code)
+    
+    
+@api_view(['POST'])
+def forget_password_view_code(request):
+    """
+    Verifies that the code the user received in their email is correct
+    @params: code, user_id, password, re_password
+    """
+    data = request.data
+    entered_code = data.get("code")
+    user_id = data.get("user_id")
+
+    # Password
+    password = data.get("password")
+    re_password = data.get("re_password")
+
+    if not entered_code:
+        return Response({"message": "Please enter the code sent to your mail."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not user_id:
+        return Response({"message": "Unidentified user. Please send the user_id in payload."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    if not password:
+        return Response({"password": ["Password is required"]}, status=status.HTTP_400_BAD_REQUEST)
+    if not re_password:
+        return Response({"password": ["Password Confirmation is required"]}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if not all([password, re_password]):
+        return Response({
+            "password": ["Please enter your password for both fields: password and re_password"]
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    # Check if both password and re_password are valid strings
+    if not all([str(password) == password, str(re_password) == re_password]):
+        return Response({"password": ["Passwords must be valid strings"]}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Check if password and re_password are a match
+    if password != re_password:
+        return Response({"password": ["Passwords do not match"]}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Check if passwords meet the django validation score
+    password_valid_status = is_valid_password(password)
+    if password_valid_status.status == False:
+        return Response({
+            "password": [
+                error_message for error_message in password_valid_status.error_messages
+            ]
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+    # Check if user exists
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({"message": "User does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if user.code == None:
+        return Response({"message": "Code is invalid"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Check if user has code and the code is correct
+    if not int(user.code) == int(entered_code):
+        return Response({"message": "Code is incorrect"}, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        if user.check_password(password):
+            return Response({"message": "Current password must not be same as previous password"}, status=status.HTTP_400_BAD_REQUEST)
+        # Change the user code so it can't be used again
+        user.set_password(password)
+        user.code = None
+        user.save()
+        # Check if password is good
+        return Response({"message": "Password was reset successfully."}, status=status.HTTP_200_OK)
+
+    
+
+
+# LOGIN USER
 class CustomAuthToken(APIView):
     throttle_classes = []
     permission_classes = []
@@ -92,7 +348,9 @@ class CustomAuthToken(APIView):
         serializer = self.get_serializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
-        
+
+        if not user.is_verified:
+            return Response({"message": "User is not verified"}, status=status.HTTP_401_UNAUTHORIZED)
         # Change user token once requests are made continually
         oldTokens = Token.objects.filter(user__id=user.id)
         for token in oldTokens:
@@ -108,7 +366,7 @@ class CustomAuthToken(APIView):
 # USER LOGOUT VIEW
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsUserVerified])
 def logoutView(request):
     # Check if the Authorization header is present in the request
     if 'Authorization' in request.headers:
@@ -146,7 +404,7 @@ def get_user_from_token(request):
 # USER PROFILE
 @api_view(['GET', 'PUT'])
 @authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsUserVerified])
 @parser_classes([MultiPartParser, FormParser])
 def get_current_user_profile(request):
     if request.method == 'GET':
@@ -189,7 +447,7 @@ def get_current_user_profile(request):
 # Current user address view
 @api_view(['GET', 'POST'])
 @authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsUserVerified])
 def current_user_address_view(request):
     if request.method == 'GET':
         user_addresses = UserAddress.objects.filter(user=request.user)
@@ -225,7 +483,7 @@ def current_user_address_view(request):
 
 @api_view(['GET', 'PUT', 'DELETE'])
 @authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsUserVerified])
 def detail_user_address_view(request, pk):
     if request.method == 'GET':
         try:
@@ -272,81 +530,3 @@ def detail_user_address_view(request, pk):
     else:
         return Response({"detail": "Method not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
     
-
-
-@api_view(['POST'])
-def create_new_user(request):
-    if request.method == 'POST':
-        email = request.data.get("email")
-        password = request.data.get("password")
-        if not email:
-            return Response({
-                "email": [
-                    "This field may not be blank."
-                ]
-            }, status=status.HTTP_400_BAD_REQUEST)
-        elif not password:
-            return Response({
-                "password": [
-                    "This field may not be blank."
-                ]
-            }, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            # Check if email and password are valid entry
-            email_valid_status = check_email(email)
-            password_valid_status = is_valid_password(password)
-            if email_valid_status.status == False:
-                return Response({
-                    "email": [
-                        error_message for error_message in email_valid_status.error_messages
-                    ]
-                }, status=status.HTTP_400_BAD_REQUEST)
-            
-            if password_valid_status.status == False:
-                return Response({
-                    "password": [
-                        error_message for error_message in password_valid_status.error_messages
-                    ]
-                }, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Lastly Check if user already exists
-            existing_user = User.objects.filter(email=email)
-            if len(existing_user) > 1 or existing_user:
-                return Response({
-                    "email": [
-                        "User with email already exists."
-                    ]
-                }, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                # Finally create user Create user
-                data = request.data
-                code = generate_6_digit_code()
-                data.update({"code": code})
-                serializer = UserSerializer(data=data)
-                if serializer.is_valid():
-                    serializer.save()
-                    user_details = {
-                        "user_id": serializer.data.get("id"),
-                        "email": serializer.data.get("email"),
-                        "is_staff": serializer.data.get("is_staff"),
-                        "last_login": serializer.data.get("last_login"),
-                        "user_permissions": serializer.data.get("user_permissions"),
-                        "is_superuser": serializer.data.get("is_superuser"),
-                        "role": serializer.data.get("role"),
-                        "token":  User.objects.get(id=serializer.data.get("id")).auth_token.key,
-                        "password": User.objects.get(id=serializer.data.get("id")).password,
-                    }
-                    send_registration_code_mail(code)
-                    return Response(user_details, status=status.HTTP_201_CREATED)
-                else:
-                    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    else:
-        return Response({ "detail": "Http method not allowed." }, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    
-
-
-
-
-
-
