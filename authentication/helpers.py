@@ -64,7 +64,7 @@ def generate_4_digit_code():
 
 # Send 4 digits verification code to user's email
 def send_registration_code_mail(code, email):
-    url = "http://localhost:3000/api/register"
+    url = "https://reyvers-email-service.vercel.app/api/register"
     headers = {
         "Content-Type": "application/json"
     }
