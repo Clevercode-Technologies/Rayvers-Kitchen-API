@@ -28,7 +28,8 @@ class Restaurant(models.Model):
     kitchen_id = models.CharField(_("Kitchen id"), max_length=20, blank=True, null=False)
     name = models.CharField(max_length=255)
     description = models.TextField()
-    ratings = models.IntegerField(default=0)
+    address = models.TextField(blank=True)
+    ratings = models.DecimalField(default=0, max_digits=3, decimal_places=1)
     # Other fields as needed will be here...
 
     def __str__(self):
@@ -64,18 +65,45 @@ class Image(models.Model):
     def __str__(self):
         return self.file.url
 
-
-class Dish(models.Model):
+class Ingredient(models.Model):
     name = models.CharField(max_length=255, unique=True)
+
+    def __str__(self) -> str:
+        return self.name
+    
+class Size(models.Model):
+    size = models.CharField(max_length=255, unique=True)
+
+    def __str__(self) -> str:
+        return self.size
+    
+class Dish(models.Model):
+    DELIVERY_OPTIONS = [
+        ("free", "free"),
+        ("paid", "paid")
+    ]
+    name = models.CharField(max_length=255, unique=True)
+    size = models.ForeignKey(Size, on_delete=models.CASCADE)
     images = models.ManyToManyField(Image)
-    description = models.TextField()
+    description = models.TextField(blank=False, null=False)
+    delivery_options = models.CharField(choices=DELIVERY_OPTIONS, max_length=5, default="free")
+    time_duration = models.IntegerField(verbose_name="Time it takes to deliver.", help_text="In minutes.", default=0, blank=False, null=False)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="dish_category") 
     price = models.DecimalField(max_digits=10, decimal_places=2)
+    ingredients = models.ManyToManyField(Ingredient, related_name="dish_ingredients")
     restaurant = models.ForeignKey(Restaurant, related_name="restaurants", on_delete=models.CASCADE)
-    ratings = models.IntegerField(default=0)
+    ratings = models.DecimalField(default=0, max_digits=3, decimal_places=1)
     favourite = models.ManyToManyField(User, related_name="favourites", blank=True)
+
     # Add other fields as needed...
 
+    @property
+    def restaurant_details(self):
+        restaurant = self.restaurant
+        return {
+            "name": restaurant.name,
+            "ratings": restaurant.ratings,
+        }
 
     @property
     def get_images(self):

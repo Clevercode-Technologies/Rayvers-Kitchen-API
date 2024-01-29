@@ -11,13 +11,17 @@ from .models import (
     CartItem,
     Payment,
     PersonalMessage,
-    Image
+    Image,
+    Ingredient,
+    Size
 )
 
 # Register your models here.
 admin.site.register(Restaurant)
 admin.site.register(Category)
 admin.site.register(Dish)
+admin.site.register(Ingredient)
+admin.site.register(Size)
 admin.site.register(Image)
 admin.site.register(Order)
 admin.site.register(OrderItem)

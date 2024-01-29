@@ -5,6 +5,12 @@ from django.contrib.auth.password_validation import validate_password
 from pydantic import BaseModel
 import random
 import requests
+import json
+import asyncio
+import aiohttp
+
+
+
 # Define Pydantic
 class ValidationResult(BaseModel):
     message: str
@@ -51,23 +57,49 @@ def is_valid_password(password: str) -> ValidationResult:
             error_messages=error_messages
         )
 
-# Generate user 6 digits code
 
+# Generate user 4 digits verification code
+def generate_4_digit_code():
+    return str(random.randint(1000, 9999))
 
-def generate_6_digit_code():
-    return str(random.randint(100000, 999999))
-
-
-def send_registration_code_mail(url, code):
+# Send 4 digits verification code to user's email
+def send_registration_code_mail(code, email):
+    url = "http://localhost:3000/api/register"
     headers = {
         "Content-Type": "application/json"
     }
     try:
-        response = requests.post(url, data={"userCode": code}, headers=headers)
+        response = requests.post(url, data=json.dumps({"userCode": code, "email": email}), headers=headers)
         return response.status_code
-    except:
+    except requests.Timeout:
+        # Handle timeout error
+        return 408  # HTTP 408 Request Timeout
+    except requests.RequestException as e:
+        # Handle other request exceptions
+        print(f"Request exception: {e}")
         return 400
+    
 
+
+# async def send_registration_code_mail_async(code, email):
+#     url = "http://localhost:3000/api/register"
+#     headers = {"Content-Type": "application/json"}
+
+#     async with aiohttp.ClientSession() as session:
+#         try:
+#             async with session.post(url, data=json.dumps({"userCode": code, "email": email}), headers=headers, timeout=10) as response:
+#                 return response.status
+#         except aiohttp.ClientError as e:
+#             print(f"Async request to external API failed: {e}")
+#             return 400
+        
+
+def check_if_code_matches(userCode, code):
+    # assert userCode == int(userCode) and int(code) == code, "codes must be valid integers"
+    if userCode == code:
+        return True
+    else:
+        return False
 
 
 

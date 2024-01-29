@@ -11,13 +11,27 @@ urlpatterns = [
     path("token/", primary_views.CustomAuthToken.as_view(), name="token"),
     path("logout/", primary_views.logoutView, name="logout"),
     path("users/", primary_views.create_new_user, name="create_user"),
+
+    path("users/verify/", primary_views.verify_user_upon_registration, name="verify_user"),
+    path("users/verify/resend-code/", primary_views.verify_user_retry_code, name="verify_retry_code_user"),
+
+    # Password
+    path("users/reset/password/", primary_views.forget_password_view_email, name="forget_password_view_email"),
+    path("users/reset/password/code/", primary_views.forget_password_view_code, name="forget_password_view_code"),
+
     path("users/me/", primary_views.get_current_user_profile, name="profile"),
     path("users/addresses/", primary_views.current_user_address_view, name="address_list"),
     path("users/addresses/<int:pk>/", primary_views.detail_user_address_view, name="address_detail"),
 
     # Secondary Views
+    
+    # Driver
     path("drivers/token/", secondary_views.login_driver, name="login_driver"),
     path("drivers/", secondary_views.create_driver, name="create_driver"),
+
+    # Restaurant
+    path("restaurants/token/", secondary_views.login_restaurant, name="login_driver"),
+    path("restaurants/", secondary_views.create_restaurant, name="create_driver"),
 ]
 
 

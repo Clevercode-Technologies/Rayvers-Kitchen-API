@@ -16,18 +16,22 @@ Generate a magic token to access our wonderland. Send your email and password to
   "password": "supersecret"
 }
 
+
 ```
+
 ### Response:
+
 ```json
+
 {
-  "token": "your-magical-token",
-  "user_id": 42,
-  "email": "your.email@example.com"
+  "user_id": 99,
+  "email": "new.hero@example.com",
+  "token": "your-magical-token"
 }
 
+
 ```
 
-Pro Tip: Don't forget your token; it's the secret sauce to unlock the treasures!
 
 ## Logout 🚪
 ## POST /auth/logout/
@@ -106,19 +110,142 @@ Join the league of extraordinary individuals. Create your account and become a h
 ```
 
 ### Response:
-
 ```json
 
 {
-  "user_id": 99,
-  "email": "new.hero@example.com",
-  "token": "your-magical-token"
+  "message": "A verification code has been sent to talk2james@gmail.com.",
+  "user_id": 5,
+  "email": "talk2james@gmail.com",
+  "role": "customer"
 }
-
 
 ```
 
-Congratulations! You're now part of our superhero community. Keep your token safe!
+Pro Tip: Don't forget your token; it's the secret sauce to unlock the treasures!
+
+
+## Verify User
+POST /auth/users/verify/
+A code will be send the user's email
+The user_id must be sent along the code
+
+```json
+{
+  "code": 4432,
+  "user_id": 4
+}
+```
+
+If the user's email is correct:
+```json
+{
+  "message": "Account has been verified successfully. Proceed to login."
+}
+```
+
+If user decides to apply for another verification code,
+they can use this endpoint
+### POST /auth/users/verify/resend-code/
+```json
+
+  {
+    "user_id": 2
+  }
+
+```
+
+### The Response
+
+```json
+{"message": "Code was resent to your email"}
+```
+
+### Error Handling
+In case of an error, any of the following format is sent back to user
+
+```json
+{"message": "Code was resent to your email"}
+{"message": "Encountered an issue sending email. Retry!"}
+{"message": "Invalid user id. User does not exist."}
+```
+
+If the code is incorrect, you'll get a variety of responses:
+
+```json
+{
+  "message": "User code is invalid"
+}
+{
+  "message": "User does not exist."
+}
+
+```
+
+## Reset Password
+This is the endpoint for the forget password functionality
+
+## POST /auth/users/reset/password/
+
+```json
+{
+  "email": "john@doe.com"
+}
+
+```
+### Response
+```json
+  {"message": "Code was sent to your email", "user_id": 2}
+```
+After the reset password endpoint is sent, the user can still use the resend-code endpoint to receive another code
+
+
+### Error Handling
+In case of an error, any of the following format is sent back to user FOR INCORRECT USER ID or EMAIL was not sent successfully.
+
+
+```json
+{"message": "User with email does not exist"} - 
+{"message": "Encountered an issue sending email. Retry!", "user_id": 3}
+```
+
+
+## Reset Password with Code
+### POST /auth/users/reset/password/code/
+
+Here, we require a valid user_id, verification code, password and re_password fields to reset the password
+
+```json
+
+    {
+      "user_id": 3,
+      "code": 1238,
+      "password": "newpassword",
+      "re_password": "newpassword"
+    }
+
+```
+
+
+### Error Handling
+In case of an error, any of the following format is sent back to user.
+
+
+```json
+{"message": "Please enter the code sent to your mail."} 
+{"message": "Unidentified user. Please send the user_id in payload."}
+{"password": ["Password is required"]}
+{"password": ["Password Confirmation is required"]}
+{
+"password": ["Please enter your password for both fields: password and re_password"]
+}
+{"password": ["Passwords must be valid strings"]}
+{"password": ["Passwords do not match"]}
+{"message": "User does not exist"}
+{"message": "Code is incorrect"}
+{"message": "Password was reset successfully."}
+```
+
+
 
 
 #### That's it for now, fearless explorer! If you have more quests, check our URLs for additional adventures. May your API calls be swift and your tokens never expire! 🚀✨
