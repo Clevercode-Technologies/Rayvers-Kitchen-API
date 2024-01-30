@@ -58,7 +58,13 @@ def login_restaurant(request):
                 "token": user.auth_token.key, 
                 "user_id": user.id, 
                 "kitchen_id": user.username, 
-                # "email": user.email
+                # "email": user.email,
+                "permissions": {
+                    "is_superuser": user.is_superuser,
+                    "is_driver": user.role == "logistics",
+                    "is_restaurant": user.role == "chef",
+                    "is_customer": user.role == "customer"
+                }
             }, status=status.HTTP_200_OK)
         else:
             return Response({"detail": "password is incorrect"}, status=status.HTTP_400_BAD_REQUEST)
@@ -166,6 +172,7 @@ def create_restaurant(request):
                     "user_id": serializer.data.get("id"),
                     "kitchen_id": serializer.data.get("username"),
                     "role": serializer.data.get("role"),
+
                 }
                 response_gotten_from_code = send_registration_code_mail(code, serializer.data.get('email'))
                 print("The response status I got from the code registration: ", response_gotten_from_code)
@@ -210,7 +217,13 @@ def login_driver(request):
                 "token": user.auth_token.key, 
                 "user_id": user.id, 
                 "driver_id": user.username, 
-                "email": user.email
+                "email": user.email,
+                "permissions": {
+                    "is_superuser": user.is_superuser,
+                    "is_driver": user.role == "logistics",
+                    "is_restaurant": user.role == "chef",
+                    "is_customer": user.role == "customer"
+                }
             }, status=status.HTTP_200_OK)
         else:
             return Response({"detail": "password is incorrect"}, status=status.HTTP_400_BAD_REQUEST)
@@ -296,7 +309,7 @@ def create_driver(request):
             # Finally create user Create user
             if request.user.role != "chef":
                 return Response({
-                    "detail": "only restaurants and admins have permission to add drivers"
+                    "detail": "only restaurants have permission to add drivers"
                 }, status=status.HTTP_400_BAD_REQUEST)
 
             
@@ -322,18 +335,6 @@ def create_driver(request):
                     "user_id": serializer.data.get("id"),
                     "driver_id": driver.driver_id,
                     "role": serializer.data.get("role"),
-
-
-                    # "user_id": serializer.data.get("id"),
-                    # "username": serializer.data.get("username"),
-                    # "email": serializer.data.get("email"),
-                    # "is_staff": serializer.data.get("is_staff"),
-                    # "last_login": serializer.data.get("last_login"),
-                    # "user_permissions": serializer.data.get("user_permissions"),
-                    # "is_superuser": serializer.data.get("is_superuser"),
-                    # "role": serializer.data.get("role"),
-                    # "token":  User.objects.get(id=serializer.data.get("id")).auth_token.key,
-                    # "password": User.objects.get(id=serializer.data.get("id")).password
                 }
                 response_gotten_from_code = send_registration_code_mail(code, serializer.data.get('email'))
                 print("The response status I got from the code registration: ", response_gotten_from_code)
