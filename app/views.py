@@ -75,7 +75,7 @@ class CategoryViewDetails(APIView):
     permission_classes = [IsAuthenticated, IsUserVerified]
 
     serializer_class =  serializers.CategorySerializer
-    parser_classes = [MultiPartParser, FormParser]
+    # parser_classes = [MultiPartParser, FormParser]
 
     def get(self, *args, **kwargs):
         """Returns a category detail and paginated dishes under the category"""
@@ -111,7 +111,7 @@ class CategoryViewDetails(APIView):
     def put(self, *args, **kwargs):
         pk = kwargs["pk"]
         category = get_object_or_404(models.Category, pk=pk)
-        serializer = self.serializer_class(instance=category, data=self.request.data)
+        serializer = self.serializer_class(category, data=self.request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -154,8 +154,6 @@ class DishesViewList(APIView):
         })
 
     def post(self, *args, **kwargs ):
-        user_is_chef = IsUserChef().has_permission(self.request)
-        print("user_is_chef", user_is_chef)
         
         data = self.request.data
         # Ensure only chef that added dishes can delete them

@@ -19,6 +19,7 @@ def generate_random_username(length, max_attempts=100):
 
 class Category(models.Model):
     name = models.CharField(max_length=255, unique=True, blank=False, null=False)
+    image = models.ImageField(verbose_name="category image", upload_to="category/", blank=False, null=False)
     
     def __str__(self):
         return self.name
@@ -26,6 +27,7 @@ class Category(models.Model):
 class Restaurant(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     kitchen_id = models.CharField(_("Kitchen id"), max_length=20, blank=True, null=False)
+    image = models.ImageField(verbose_name="restauarant image", upload_to="restaurant/", blank=False, null=False)
     name = models.CharField(max_length=255)
     description = models.TextField()
     address = models.TextField(blank=True)
@@ -67,6 +69,7 @@ class Image(models.Model):
 
 class Ingredient(models.Model):
     name = models.CharField(max_length=255, unique=True)
+    
 
     def __str__(self) -> str:
         return self.name
@@ -79,7 +82,7 @@ class Dish(models.Model):
         ("paid", "paid")
     ]
     name = models.CharField(max_length=255, unique=True)
-    images = models.ManyToManyField(Image)
+    images = models.ManyToManyField(Image, related_name='dish_images')
     description = models.TextField(blank=False, null=False)
     delivery_options = models.CharField(choices=DELIVERY_OPTIONS, max_length=5, default="free")
     time_duration = models.IntegerField(verbose_name="Time it takes to deliver.", help_text="In minutes.", default=0, blank=False, null=False)

@@ -108,27 +108,13 @@ WSGI_APPLICATION = "RayversKitchenAPI.wsgi.application"
 
 DATABASES = {
     'default': dj_database_url.config(
-        default=config('DATABASE_URL'),
+        default=config("DATABASE_URL")
     )
 }
 
 
 # Solve foreign key constraints..
 
-# DATABASES = {
-#   'default': {
-#     'ENGINE': 'django.db.backends.mysql',
-#     'NAME': config('DB_NAME'),
-#     'HOST': config('DB_HOST'),
-#     'PORT': config('DB_PORT'),
-#     'USER': config('DB_USER'),
-#     'PASSWORD': config('DB_PASSWORD'),
-#     'OPTIONS': {
-#         'ssl': {'ca': config('MYSQL_ATTR_SSL_CA')},
-#         'init_command': 'SET foreign_key_checks = 1;',  # Make sure foreign key checks are enabled
-#     }
-#   }
-# }
 
 
 # Password validation

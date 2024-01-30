@@ -360,7 +360,13 @@ class CustomAuthToken(APIView):
         return Response({
             'token': token.key,
             'user_id': user.pk,
-            'email': user.email
+            'email': user.email,
+            "permissions": {
+                "is_superuser": user.is_superuser,
+                "is_driver": user.role == "logistics",
+                "is_restaurant": user.role == "chef",
+                "is_customer": user.role == "customer"
+            }
         })
 
 # USER LOGOUT VIEW
@@ -414,13 +420,16 @@ def get_current_user_profile(request):
                 "email": user.email,
                 "name": user.profile.name,
                 "date_of_birth": user.profile.date_of_birth,
-                "is_superuser": user.is_superuser,
-                "is_staff": user.is_staff,
-                "is_active": user.is_active,
                 "profile_picture": user.profile.get_image_url,
                 "bio": user.profile.bio,
                 "role": user.role,
-                "image_url": user.profile.image_url
+                "image_url": user.profile.image_url,
+                "permissions": {
+                    "is_superuser": user.is_superuser,
+                    "is_driver": user.role == "logistics",
+                    "is_restaurant": user.role == "chef",
+                    "is_customer": user.role == "customer"
+                }
             }
             return Response(userData, status=status.HTTP_200_OK)
         else:
