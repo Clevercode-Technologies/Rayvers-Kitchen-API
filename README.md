@@ -337,7 +337,7 @@ After restaurant has been created, a verification code will be sent to the provi
 }
 ```
 
-## Login the driver
+## Login the resraurant
 After the restaurant has been verified, he can log in with his`kitchen_id` and `password`.
 ### Endpoint: /auth/restaurants/token/ POST
 
