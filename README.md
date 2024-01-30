@@ -250,7 +250,114 @@ In case of an error, any of the following format is sent back to user.
 
 #### That's it for now, fearless explorer! If you have more quests, check our URLs for additional adventures. May your API calls be swift and your tokens never expire! 🚀✨
 
+
+## Create Driver
+In order to create driver you must provide `email` and `password`.
+Note that only restaurants and admins have the permissions to create drivers.
+
+If the authenticated user is not a restaurant or admin, `invalid token` response will be raised.
+### Endpoint: /auth/drivers/  POST
+```json
+  {
+    "email": "dummy@gmail.com",
+    "password": "newpassword"
+  }
+```
+After driver has been created, a verification code will be sent to the provided email
+### Response
+```json
+{
+  "message": "A verification code has been sent to dummy@gmail.com.",
+  "user_id": 13,
+  "driver_id": "qEBMwSQE",
+  "role": "logistics"
+}
+```
+### You can use the /auth/users/verify/ Endpoint to verify driver
+```json
+{
+  "code": 2377,
+  "user_id": 13
+}
+```
+
 ## Login the driver
+After the driver has been verified, he can log in with his`driver_id` and `password`.
+### Endpoint: /auth/drivers/token/ POST
+
+```json
+{
+  "driver_id": "qEBMwSQE",
+  "password": "newpassword"
+}
+```
+
+#### Response -- Success
+
+```json
+{
+  "token": "3be550010c177b16209c9aabe9a28717d46870a3",
+  "user_id": 13,
+  "driver_id": "qEBMwSQE"
+}
+
+```
+
+
+
+
+## Create Restaurant
+In order to create restaurant you must provide email and password
+
+Note that only admins have the permissions to create restaurants.
+
+If the authenticated user is not an admin, `invalid token` response will be raised.
+### Endpoint: /auth/restaurants/  POST
+```json
+  {
+    "email": "dummy@gmail.com",
+    "password": "newpassword"
+  }
+```
+After restaurant has been created, a verification code will be sent to the provided email
+### Response
+```json
+{
+  "message": "A verification code has been sent to dummy@gmail.com.",
+  "user_id": 13,
+  "kitchen_id": "qEBMwSQE",
+  "role": "chef"
+}
+```
+### You can use the /auth/users/verify/ Endpoint to verify restaurant
+```json
+{
+  "code": 2377,
+  "user_id": 13
+}
+```
+
+## Login the driver
+After the restaurant has been verified, he can log in with his`kitchen_id` and `password`.
+### Endpoint: /auth/restaurants/token/ POST
+
+```json
+{
+  "kitchen_id": "qEBMwSQE",
+  "password": "newpassword"
+}
+```
+
+#### Response -- Success
+
+```json
+{
+  "token": "3be550010c177b16209c9aabe9a28717d46870a3",
+  "user_id": 13,
+  "kitchen_id": "qEBMwSQE"
+}
+
+```
 
 
 
