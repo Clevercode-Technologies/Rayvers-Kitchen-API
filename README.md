@@ -254,6 +254,7 @@ In case of an error, any of the following format is sent back to user.
 ## Create Driver
 In order to create driver you must provide `email` and `password`.
 Note that only restaurants and admins have the permissions to create drivers.
+You must have the authorization token in the header when attempting to create a driver.
 
 If the authenticated user is not a restaurant or admin, `invalid token` response will be raised.
 ### Endpoint: /auth/drivers/  POST
@@ -310,6 +311,7 @@ After the driver has been verified, he can log in with his`driver_id` and `passw
 In order to create restaurant you must provide email and password
 
 Note that only admins have the permissions to create restaurants.
+You must have the authorization token in the header when attempting to create a restaurant.
 
 If the authenticated user is not an admin, `invalid token` response will be raised.
 ### Endpoint: /auth/restaurants/  POST
@@ -319,7 +321,9 @@ If the authenticated user is not an admin, `invalid token` response will be rais
     "password": "newpassword"
   }
 ```
+
 After restaurant has been created, a verification code will be sent to the provided email
+
 ### Response
 ```json
 {
@@ -337,7 +341,7 @@ After restaurant has been created, a verification code will be sent to the provi
 }
 ```
 
-## Login the resraurant
+## Login the restaurant
 After the restaurant has been verified, he can log in with his`kitchen_id` and `password`.
 ### Endpoint: /auth/restaurants/token/ POST
 
