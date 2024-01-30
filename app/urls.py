@@ -1,6 +1,16 @@
-from django.urls import path 
+from django.urls import path, include
 from . import views as primary_views
 from . import action_views as secondary_views
+
+from rest_framework.routers import DefaultRouter
+
+from .action_views import OrderViewSet, OrderItemViewSet, DishViewSet
+
+
+router = DefaultRouter()
+router.register(r'orders', OrderViewSet)
+router.register(r'orderitems', OrderItemViewSet)
+router.register(r'dishes', DishViewSet)
 
 
 urlpatterns = [
@@ -21,6 +31,7 @@ urlpatterns = [
     path("drivers/<int:pk>/", primary_views.DriverViewDetails.as_view(), name="driver_detail"),
 
     # Secondary Views
+    path('custom/', include(router.urls)),
     
     
 ] 

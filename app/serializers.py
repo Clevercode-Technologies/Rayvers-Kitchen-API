@@ -12,7 +12,7 @@ class DishSerializer(serializers.ModelSerializer):
     # category = CategorySerializer(read_only=True)
     class Meta:
         model = models.Dish
-        fields = ['id', 'name', 'get_images', 'category', 'description', 'price', 'restaurant', 'ratings', 'favourite', 'restaurant_details']
+        fields = ['id', 'name', 'category', 'description', 'price', 'restaurant', 'ratings', 'favourite', 'restaurant_details']
     
     def get_category(self):
         return self.fields['category'].to_representation(self.instance.category)
@@ -45,8 +45,19 @@ class DriverSerializer(serializers.ModelSerializer):
     
 
 
+class OrderItemSerializer(serializers.ModelSerializer):
+    food_item = DishSerializer()
 
+    class Meta:
+        model = models.OrderItem
+        fields = ['id', 'food_item', 'quantity']
 
+class OrderSerializer(serializers.ModelSerializer):
+    items = OrderItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = models.Order
+        fields = ['id', 'user', 'total_price', 'created_at', 'is_delivered', 'assigned_driver', 'tracking_url', 'payment_status', 'items']
 
 
 

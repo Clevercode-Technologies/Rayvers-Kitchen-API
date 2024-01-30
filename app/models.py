@@ -71,11 +71,7 @@ class Ingredient(models.Model):
     def __str__(self) -> str:
         return self.name
     
-class Size(models.Model):
-    size = models.CharField(max_length=255, unique=True)
 
-    def __str__(self) -> str:
-        return self.size
     
 class Dish(models.Model):
     DELIVERY_OPTIONS = [
@@ -83,7 +79,6 @@ class Dish(models.Model):
         ("paid", "paid")
     ]
     name = models.CharField(max_length=255, unique=True)
-    size = models.ForeignKey(Size, on_delete=models.CASCADE)
     images = models.ManyToManyField(Image)
     description = models.TextField(blank=False, null=False)
     delivery_options = models.CharField(choices=DELIVERY_OPTIONS, max_length=5, default="free")
@@ -128,7 +123,6 @@ class Dish(models.Model):
 
 class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    items = models.ManyToManyField(Dish, through='OrderItem')
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
     is_delivered = models.BooleanField(default=False)
@@ -145,7 +139,7 @@ class Order(models.Model):
 
 class OrderItem(models.Model):
     food_item = models.ForeignKey(Dish, on_delete=models.CASCADE)
-    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
     quantity = models.PositiveIntegerField()
 
     def __str__(self):
