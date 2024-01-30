@@ -318,7 +318,10 @@ If the authenticated user is not an admin, `invalid token` response will be rais
 ```json
   {
     "email": "dummy@gmail.com",
-    "password": "newpassword"
+    "password": "newpassword",
+    "name": "Reyvers Restaurant",
+    "description": "Best restaurant out there",
+    "address": "Ijebu"
   }
 ```
 

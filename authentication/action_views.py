@@ -78,10 +78,32 @@ def create_restaurant(request):
     data = request.data
     email = data.get("email")
     password = data.get("password")
+    name = data.get("name", "")
+    address = data.get("address", "")
+    description = data.get("description", "")
+
 
     # Create restaurant user
     # Check if user already exists
     # If user exists, do not create user
+    if not description:
+        return Response({
+            "description": [
+                "This field may not be blank."
+            ]
+        }, status=status.HTTP_400_BAD_REQUEST)
+    if not address:
+        return Response({
+            "address": [
+                "This field may not be blank."
+            ]
+        }, status=status.HTTP_400_BAD_REQUEST)
+    if not name:
+        return Response({
+            "name": [
+                "This field may not be blank."
+            ]
+        }, status=status.HTTP_400_BAD_REQUEST)
     if not email:
         return Response({
             "email": [
@@ -127,7 +149,17 @@ def create_restaurant(request):
 
             serializer = serializers.UserSerializer(data=data)
             if serializer.is_valid():
-                serializer.save()
+                user = serializer.save()
+                # 
+                if user.role == "chef":
+                    restaurant = Restaurant.objects.filter(user=user).first()
+                    if restaurant:
+                        restaurant.name = name
+                        restaurant.address = address
+                        restaurant.description = description
+                        restaurant.save()
+                    else:
+                        pass
                 # Object / Dictionary to be returned after user has been created
                 user_details = {
                     "message": f"A verification code has been sent to {serializer.data.get('email')}.",
@@ -193,10 +225,16 @@ def create_driver(request):
     data = request.data
     email = data.get("email")
     password = data.get("password")
+    vehicle_color = data.get("vehicle_color")
+    vehicle_description = data.get("vehicle_description")
+    vehicle_number = data.get("vehicle_number")
+    available = data.get("available")
+
 
     # Create driver user
     # Check if user already exists
     # If user exists, do not create user
+
     if not email:
         return Response({
             "email": [
@@ -209,6 +247,25 @@ def create_driver(request):
                 "This field may not be blank."
             ]
         }, status=status.HTTP_400_BAD_REQUEST)
+    elif not vehicle_color:
+        return Response({
+            "vehicle_color": [
+                "This field may not be blank."
+            ]
+        }, status=status.HTTP_400_BAD_REQUEST)
+    elif not vehicle_description:
+        return Response({
+            "vehicle_description": [
+                "This field may not be blank."
+            ]
+        }, status=status.HTTP_400_BAD_REQUEST)
+    elif not vehicle_number:
+        return Response({
+            "vehicle_number": [
+                "This field may not be blank."
+            ]
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
     else:
         # Check if email and password are valid entry
         email_valid_status = check_email(email)
@@ -242,31 +299,44 @@ def create_driver(request):
                     "detail": "only restaurants and admins have permission to add drivers"
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-            data.update({"role": "logistics"})
+            
+            code = generate_4_digit_code()
+            data.update({"role": "logistics", "code": code})
             serializer = serializers.UserSerializer(data=data)
             if serializer.is_valid():
-                serializer.save()
+                created_user = serializer.save()
                 if request.user.role == "chef":
                     # Query for the user restaurant model if user is chef
                     restaurant = Restaurant.objects.filter(user=request.user).first()
                     # Get the Driver
-                    driver = Driver.objects.filter(driver_id=serializer.data.get("username")).first()
+                    driver = Driver.objects.filter(user=created_user).first()
                     # Assign the driver to the restaurant
                     driver.restaurant = restaurant
+                    driver.vehicle_color = vehicle_color
+                    driver.vehicle_description = vehicle_description
+                    driver.vehicle_number = vehicle_number
                     driver.save()
                 # Object / Dictionary to be returned after user has been created
                 user_details = {
+                    "message": f"A verification code has been sent to {serializer.data.get('email')}.",
                     "user_id": serializer.data.get("id"),
-                    "username": serializer.data.get("username"),
-                    "email": serializer.data.get("email"),
-                    "is_staff": serializer.data.get("is_staff"),
-                    "last_login": serializer.data.get("last_login"),
-                    "user_permissions": serializer.data.get("user_permissions"),
-                    "is_superuser": serializer.data.get("is_superuser"),
+                    "driver_id": driver.driver_id,
                     "role": serializer.data.get("role"),
-                    "token":  User.objects.get(id=serializer.data.get("id")).auth_token.key,
-                    "password": User.objects.get(id=serializer.data.get("id")).password
+
+
+                    # "user_id": serializer.data.get("id"),
+                    # "username": serializer.data.get("username"),
+                    # "email": serializer.data.get("email"),
+                    # "is_staff": serializer.data.get("is_staff"),
+                    # "last_login": serializer.data.get("last_login"),
+                    # "user_permissions": serializer.data.get("user_permissions"),
+                    # "is_superuser": serializer.data.get("is_superuser"),
+                    # "role": serializer.data.get("role"),
+                    # "token":  User.objects.get(id=serializer.data.get("id")).auth_token.key,
+                    # "password": User.objects.get(id=serializer.data.get("id")).password
                 }
+                response_gotten_from_code = send_registration_code_mail(code, serializer.data.get('email'))
+                print("The response status I got from the code registration: ", response_gotten_from_code)
                 return Response(user_details, status=status.HTTP_201_CREATED)
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
