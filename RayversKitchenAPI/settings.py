@@ -171,7 +171,7 @@ STATIC_URL = "/static/"
 
 MEDIA_URL = '/media/'
 
-#TODO: Update the default file storage when online
+# TODO: Update the default file storage when online
 
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

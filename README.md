@@ -261,7 +261,12 @@ If the authenticated user is not a restaurant or admin, `invalid token` response
 ```json
   {
     "email": "dummy@gmail.com",
-    "password": "newpassword"
+    "password": "newpassword",
+    "vehicle_image": "<FileData>",
+    "vehicle_color": "red",
+    "vehicle_description": "This is the vehicle description",
+    "vehicle_number": "HGF203JS",
+    "available": true
   }
 ```
 After driver has been created, a verification code will be sent to the provided email

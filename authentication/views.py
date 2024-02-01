@@ -230,7 +230,7 @@ def forget_password_view_email(request):
         # Here the status code could be any respond coming from email backend
         return Response({"message": "Encountered an issue sending email. Retry!", "user_id": user.id}, status=response_gotten_from_code)
     
-    
+
 @api_view(['POST'])
 def forget_password_view_code(request):
     """

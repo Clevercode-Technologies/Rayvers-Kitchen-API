@@ -51,6 +51,7 @@ class DriverSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'driver_id',
+            'vehicle_image',
             'restaurant',
             'vehicle_color',
             'vehicle_description',
