@@ -261,7 +261,12 @@ If the authenticated user is not a restaurant or admin, `invalid token` response
 ```json
   {
     "email": "dummy@gmail.com",
-    "password": "newpassword"
+    "password": "newpassword",
+    "vehicle_image": "<FileData>",
+    "vehicle_color": "red",
+    "vehicle_description": "This is the vehicle description",
+    "vehicle_number": "HGF203JS",
+    "available": true
   }
 ```
 After driver has been created, a verification code will be sent to the provided email
@@ -366,10 +371,131 @@ After the restaurant has been verified, he can log in with his`kitchen_id` and `
 
 ```
 
+## Change User Password
+In order to change users password, the user token must be provided in the Authorization header.
+## Endpoint /auth/users/change/password/ POST
+### Payload
+```json
+  {
+    "old_password": "myoldpassword",
+    "new_password": "mynewestpassword",
+    "confirm_new_password": "mynewestpassword"
+  }
+
+```
+
+### Successful Response:
+
+```json
+  {"message": "Password was successfully updated."}
+```
+
+The following response will be received if an error occured:
+
+```json
+  {"password": ["old_password, new_password and confirm_new_password fields are required."]}
+  {"password": ["Passwords do not match."]}
+  {"password": ["Invalid user credentials. User does not exist."]}
+  {"password": ["New password must be different from the previous passwords. "]}
+  {"password": ["Old Password entered is incorrect"]}
+  {"message": "Password was successfully updated."}
+```
+Some other password validation error will also occur when user password does not meet the validation score.
+
+## Change User Driver and Kitchen IDs
+In order to change users password, the user token must be provided in the Authorization header.
+This endpoint changes the Ids for both kitchen and driver ids.
+It can also change the username of the customer
+## Endpoint /auth/users/change/username/
+
+### Payload
+```json
+  {
+    "username": "james"
+  }
+
+```
+### Successful Response:
+
+```json
+  {"message": "Username was successfully updated."}
+```
+
+The following response will be received if an error occured:
+```json
+{"username": ["username field is required."]}
+{"username": ["A user with username already exists. "]}
+{"username": ["User does not exist."]}
+```
 
 
+## Get and Update Restaurant Profile information
+To get restaurant info, you need to provide a valid token in the authorization header.
+And you must ensure that user is a restaurant/kitchen. If it's not a restaurant you will receive a permission denied message.
+
+Note that this view is for the logged in restaurant user is updating its data.
+This user can also update profile information like profile picture and others
+with this endpoint: `/auth/users/me/`. Remember this enpoint is used to retrieve and modify profile data.
+### Endpoint /auth/restaurants/me/ GET
+
+No payload required for a GET request.
+### Endpoint /auth/restaurants/me/ PUT
+Payload should look like this:
+```json
+{
+  "name": "Reyvers Kitchen",
+  "image": "<FileData>",
+  "address": "1234 Sunny str. Ijebu",
+  "rating": "3",
+  "description": "This is the description"
+}
+```
+
+Do not add kitchen_id here. This endpoint is for changing kitchen details, not changing kitchen_id.
+To change kitchen_id, use the previous endpoint given: `/auth/users/change/username/`.
+
+The following response will be received if an error occured:
+```json
+{"message": "User was not found"}
+{"message": "User must be a chef. Permission denied."}
+{"message":"You are not allowed to update kitchen id via this route"}
+```
+
+Some other error responses will also occur if the user data do not meet the validation score.
 
 
+## Get and Update Driver Profile information
+To get driver info, you need to provide a valid token in the authorization header.
+And you must ensure that user is a driver/logistics. If it's not a driver you will receive a permission denied message.
+
+Note that this view is for the logged in driver user is updating its data.
+This user can also update profile information like profile picture and others
+with this endpoint: `/auth/users/me/`. Remember this enpoint is used to retrieve and modify profile data.
+### Endpoint /auth/drivers/me/ GET
+
+No payload required for a GET request.
+### Endpoint /auth/drivers/me/ PUT
+Payload should look like this:
+```json
+{
+  "vehicle_color": "Gold",
+  "vehicle_description": "Vehicle Description",
+  "vehicle_number": "GLU23HS",
+  "available": true
+}
+```
+
+Do not add kitchen_id here. This endpoint is for changing kitchen details, not changing kitchen_id.
+To change kitchen_id, use the previous endpoint given: `/auth/users/change/username/`.
+
+The following response will be received if an error occured:
+```json
+{"message": "User was not found"}
+{"message": "User must be a chef. Permission denied."}
+{"message":"You are not allowed to update kitchen id via this route"}
+```
+
+Some other error responses will also occur if the user data do not meet the validation score.
 
 
 

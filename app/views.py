@@ -47,7 +47,7 @@ class CategoryViewList(APIView):
 
     def get(self, *args, **kwargs):
         """Returns a list of all categories"""
-        categories = models.Category.objects.all()
+        categories = models.Category.objects.all().order_by("-pk")
         paginator = CustomPageNumberPagination()
 
         # Use the pagination class to paginate the queryset
@@ -84,7 +84,7 @@ class CategoryViewDetails(APIView):
         serializer = self.serializer_class(category)
 
         # Get all the dishes under this category
-        dishes = models.Dish.objects.filter(category__id=pk)
+        dishes = models.Dish.objects.filter(category__id=pk).order_by("-pk")
 
         # Use the pagination class to paginate the dishes queryset
         paginator = CustomPageNumberPagination()
@@ -94,15 +94,14 @@ class CategoryViewDetails(APIView):
         dishes_serialized = serializers.DishSerializer(paginated_dishes, many=True)
 
         context = {
-            "category": {
-                "id": serializer.data.get("id"),
-                "name": serializer.data.get("name"),
-                "dishes": {
-                    "count": paginator.page.paginator.count,
-                    "next": paginator.get_next_link(),
-                    "previous": paginator.get_previous_link(),
-                    "results": dishes_serialized.data
-                }
+            "id": serializer.data.get("id"),
+            "name": serializer.data.get("name"),
+            "image": serializer.data.get("image"),
+            "dishes": {
+                "count": paginator.page.paginator.count,
+                "next": paginator.get_next_link(),
+                "previous": paginator.get_previous_link(),
+                "results": dishes_serialized.data
             }
         }
 
@@ -138,7 +137,7 @@ class DishesViewList(APIView):
 
     def get(self, *args, **kwargs ):
         """Returns a list of all dishes"""
-        dishes = models.Dish.objects.all()
+        dishes = models.Dish.objects.all().order_by("-pk")
 
         paginator = CustomPageNumberPagination()
 
@@ -154,21 +153,26 @@ class DishesViewList(APIView):
         })
 
     def post(self, *args, **kwargs ):
-        
         data = self.request.data
+        
         # Ensure only chef that added dishes can delete them
         requesting_user_chef_id = self.request.user.id
         # Get the chef models to see if the requesting user is a chef
-        chef = models.Restaurant.objects.get(user=self.request.user)
+        try:
+            chef = models.Restaurant.objects.get(user=self.request.user)
+            print(chef.id)
+        except:
+            return Response({"message": "You must be logged in as a chef to add dishes"}, status=status.HTTP_401_UNAUTHORIZED)
 
         if self.request.user.role == "chef":
-            if requesting_user_chef_id == chef.id:
-                serializer = self.serializer_class(data=data)
+            if requesting_user_chef_id == chef.user.id:
+                serializer = self.serializer_class(data=data, context={'request': self.request})
                 serializer.is_valid(raise_exception=True)
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
+                # return Response({"message": "Yes"})
             else:
-                return Response({"details": "Chef does not exist"}, status=status.HTTP_401_UNAUTHORIZED)
+                return Response({"details": "You do not have permission to add dishes"}, status=status.HTTP_401_UNAUTHORIZED)
         else:
             return Response({"details": "Only chefs can add dishes"}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -176,6 +180,7 @@ class DishesViewList(APIView):
 class DishesViewDetails(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsUserVerified]
+    serializer_class = serializers.DishSerializer
 
     def get(self, *args, **kwargs):
         pk = kwargs["pk"]
@@ -189,7 +194,7 @@ class DishesViewDetails(APIView):
     def put(self, *args, **kwargs):
         pk = kwargs["pk"]
         dish = get_object_or_404(models.Dish, pk=pk)
-        serializer = self.serializer_class(instance=dish, data=self.request.data)
+        serializer = self.serializer_class(dish, data=self.request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -203,7 +208,7 @@ class DishesViewDetails(APIView):
         except models.Dish.DoesNotExist:
             return Response({"details": "dish with id not found"}, status=status.HTTP_404_NOT_FOUND)
         
-    
+     
 
 # ------------------------------- Restaurant views -----------------------------------
 class ResturantViewList(APIView):
@@ -212,7 +217,7 @@ class ResturantViewList(APIView):
     serializer_class = serializers.RestaurantSerializer
 
     def get(self, request):
-        restaurants = models.Restaurant.objects.all()
+        restaurants = models.Restaurant.objects.all().order_by("-pk")
         paginator = CustomPageNumberPagination()
 
         paginated_restaurants = paginator.paginate_queryset(restaurants, self.request)
@@ -274,7 +279,7 @@ class DriversViewList(APIView):
     serializer_class = serializers.DriverSerializer
 
     def get(self, request):
-        drivers = models.Driver.objects.all()
+        drivers = models.Driver.objects.all().order_by("-pk")
         paginator = CustomPageNumberPagination()
 
         paginated_drivers = paginator.paginate_queryset(drivers, self.request)
