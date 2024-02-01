@@ -27,7 +27,7 @@ class Category(models.Model):
 class Restaurant(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     kitchen_id = models.CharField(_("Kitchen id"), max_length=20, blank=True, null=False)
-    image = models.ImageField(verbose_name="restauarant image", upload_to="restaurant/", blank=False, null=False)
+    image = models.ImageField(verbose_name="restauarant image", upload_to="restaurant/", blank=False, null=True)
     name = models.CharField(max_length=255)
     description = models.TextField()
     address = models.TextField(blank=True)
@@ -47,6 +47,7 @@ def create_restaurant(sender, instance=None, created=False, **kwargs):
     if created and instance.role == "chef":
         # Create a restaurant here
         restaurant = Restaurant.objects.create(user=instance)
+        
         # Generate a unique username for the restaurant
         username = generate_random_username(8)
         while Restaurant.objects.filter(kitchen_id=username).exists():
@@ -101,6 +102,7 @@ class Dish(models.Model):
         return {
             "name": restaurant.name,
             "ratings": restaurant.ratings,
+
         }
 
     @property
@@ -114,7 +116,8 @@ class Dish(models.Model):
     def get_category(self):
         return {
             "id": self.id,
-            "name": self.category.name
+            "name": self.category.name,
+            "image": self.category.image
         }
 
     def __str__(self):
@@ -153,12 +156,12 @@ class OrderItem(models.Model):
         verbose_name = "Order Item"
 
 class Driver(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     driver_id = models.CharField(_("Driver id"), max_length=20, blank=True, null=False)
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, blank=True, null=True)
-    vehicle_color = models.CharField(max_length=40)
-    vehicle_description = models.TextField(blank=True)
-    vehicle_number = models.CharField(max_length=40)
+    vehicle_color = models.CharField(max_length=40, blank=True, null=True)
+    vehicle_description = models.TextField(blank=True, null=False)
+    vehicle_number = models.CharField(max_length=40, blank=True, null=False)
     available = models.BooleanField(default=False)
     current_location_latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     current_location_longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)

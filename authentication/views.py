@@ -19,6 +19,11 @@ from app.permissions import (
     IsUserVerified
 )
 
+from app.models import (
+    Restaurant,
+    Driver
+)
+
 from .models import (
     UserProfile, 
     UserAddress,
@@ -445,7 +450,7 @@ def get_current_user_profile(request):
         serializer = UserProfileSerializer(profile, data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     else:
@@ -539,3 +544,115 @@ def detail_user_address_view(request, pk):
     else:
         return Response({"detail": "Method not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
     
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated, IsUserVerified])
+def change_user_password(request):
+    data = request.data
+    
+    old_password = data.get("old_password")
+    new_password = data.get("new_password")
+    confirm_new_password = data.get("confirm_new_password")
+
+
+    # Check if both fields are provided
+    if not all([old_password, new_password, confirm_new_password]):
+        return Response({"password": ["old_password, new_password and confirm_new_password fields are required."]}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if new_password != confirm_new_password:
+        return Response({"password": ["Passwords do not match."]}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Check if user exists
+    # It is highly unlikely that user does not
+    # exist given the token
+    try:
+        user = User.objects.get(id=request.user.id)
+    except User.DoesNotExist:
+        return Response({"password": ["Invalid user credentials. User does not exist."]}, status=status.HTTP_404_NOT_FOUND)
+    
+    # Check if old_passwordd and new_password are a match
+    if old_password == new_password:
+        return Response({"password": ["New password must be different from the previous passwords. "]}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Check if old_password field is correct or wrong
+    if not user.check_password(old_password):
+        return Response({"password": ["Old Password entered is incorrect"]}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Check if passwords meet the django validation score
+    password_valid_status = is_valid_password(new_password)
+    if password_valid_status.status == False:
+        return Response({
+            "password": [
+                error_message for error_message in password_valid_status.error_messages
+            ]
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Finally update password
+    user.set_password(new_password)
+    user.save()
+    return Response({"message": "Password was successfully updated."}, status=status.HTTP_200_OK)
+    
+
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated, IsUserVerified])
+def change_user_username(request):
+    # Get username
+    username =  request.data.get("username")
+
+    if not username:
+        return Response({"username": ["username field is required."]}, status=status.HTTP_404_NOT_FOUND)
+    
+    # Create a check to see if username already exists in the database
+    user_existing_in_db = User.objects.filter(username=username).exclude(id=request.user.id)
+    if len(user_existing_in_db) > 0:
+        return Response({"username": ["A user with username already exists. "]}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Check if user exists
+    # It is highly unlikely that user does not
+    # exist given the token
+    try:
+        user = User.objects.get(id=request.user.id)
+    except User.DoesNotExist:
+        return Response({"username": ["User does not exist."]}, status=status.HTTP_404_NOT_FOUND)
+    
+    # Check if user is a chef (restaurant)
+    # If they are, the restaurant table should be updated as well as the user table
+
+    if user.role == "chef":
+        restaurant = Restaurant.objects.filter(user=user).first()
+        if restaurant:
+            # Update both table with same data
+            user.username = username
+            user.save()
+            restaurant.kitchen_id = username
+            restaurant.save()
+
+        else:
+            pass
+
+    elif user.role == "logistics":
+        driver = Driver.objects.filter(user=user).first()
+        if driver:
+            # Update both table with same data
+            user.username = username
+            user.save()
+            driver.driver_id = username
+            driver.save()
+        else:
+            pass
+    else:
+        user.username = username
+        user.save()
+
+    return Response({"message": "Username was successfully updated."}, status=status.HTTP_200_OK)
+
+
+
+
+
+
+
+

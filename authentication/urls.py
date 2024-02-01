@@ -18,6 +18,8 @@ urlpatterns = [
     # Password
     path("users/reset/password/", primary_views.forget_password_view_email, name="forget_password_view_email"),
     path("users/reset/password/code/", primary_views.forget_password_view_code, name="forget_password_view_code"),
+    path("users/change/password/", primary_views.change_user_password, name="change_user_password"),
+    path("users/change/username/", primary_views.change_user_username, name="change_user_username"),
 
     path("users/me/", primary_views.get_current_user_profile, name="profile"),
     path("users/addresses/", primary_views.current_user_address_view, name="address_list"),
@@ -26,10 +28,12 @@ urlpatterns = [
     # Secondary Views
     
     # Driver
+    path('drivers/me/', secondary_views.get_driver_profile, name="driver_profile"),
     path("drivers/token/", secondary_views.login_driver, name="login_driver"),
     path("drivers/", secondary_views.create_driver, name="create_driver"),
 
     # Restaurant
+    path('restaurants/me/', secondary_views.get_restaurant_profile, name="driver_profile"),
     path("restaurants/token/", secondary_views.login_restaurant, name="login_driver"),
     path("restaurants/", secondary_views.create_restaurant, name="create_driver"),
 ]

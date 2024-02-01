@@ -6,8 +6,17 @@ from django.contrib.auth import get_user_model
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from app.permissions import IsRestaurantUser
 from app.models import Driver, Restaurant
+from authentication.models import UserProfile
+from app.permissions import (
+    IsUserVerified
+)
 
 from . import serializers
+from app.serializers import (
+    RestaurantSerializer,
+    DriverSerializer,
+
+)
 from .helpers import check_email, is_valid_password
 
 
@@ -30,23 +39,26 @@ def login_restaurant(request):
     password = data.get("password")
 
     if not kitchen_id:
-        return Response({"detail": "kitchen_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "kitchen_id is required"}, status=status.HTTP_400_BAD_REQUEST)
     if not password:
-        return Response({"detail": "password is required"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "password is required"}, status=status.HTTP_400_BAD_REQUEST)
     
     # Search if the restaurant exists in either the Restaurant or User models
     try:
         user = User.objects.filter(username=kitchen_id).first()
     except User.DoesNotExist:
         user = None
-        return Response({"detail": "user does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "user does not exist"}, status=status.HTTP_400_BAD_REQUEST)
 
     
     try:
         restaurant = Restaurant.objects.filter(kitchen_id=kitchen_id).first()
     except Restaurant.DoesNotExist:
         restaurant = None
-        return Response({"detail": "kitchen does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "kitchen does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if not user:
+        return Response({"message": "User does not exist. "}, status=status.HTTP_400_BAD_REQUEST)
     
     if not user.is_verified:
         return Response({"message": "User is not verified"}, status=status.HTTP_401_UNAUTHORIZED)
@@ -56,9 +68,9 @@ def login_restaurant(request):
         if user.check_password(password):
             return Response({
                 "token": user.auth_token.key, 
+                "restaurant_id": restaurant.id,
                 "user_id": user.id, 
-                "kitchen_id": user.username, 
-                # "email": user.email,
+                "kitchen_id": user.username,
                 "permissions": {
                     "is_superuser": user.is_superuser,
                     "is_driver": user.role == "logistics",
@@ -67,8 +79,8 @@ def login_restaurant(request):
                 }
             }, status=status.HTTP_200_OK)
         else:
-            return Response({"detail": "password is incorrect"}, status=status.HTTP_400_BAD_REQUEST)
-    return Response({"detail": "user with kitchen id does exists"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "password is incorrect"}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({"message": "user with kitchen id does exists"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 
@@ -159,11 +171,19 @@ def create_restaurant(request):
                 # 
                 if user.role == "chef":
                     restaurant = Restaurant.objects.filter(user=user).first()
+                    profile = UserProfile.objects.filter(user=user).first()
+                    
                     if restaurant:
                         restaurant.name = name
                         restaurant.address = address
                         restaurant.description = description
                         restaurant.save()
+
+                        if profile:
+                            profile.name = name
+                            profile.save()
+                        else:
+                            pass
                     else:
                         pass
                 # Object / Dictionary to be returned after user has been created
@@ -182,6 +202,112 @@ def create_restaurant(request):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# RESTAURANT PROFILE
+@api_view(['PUT', 'GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated, IsUserVerified])
+def get_restaurant_profile(request):
+    # Get User object
+    # The case of user not existing given the token is highly unlikely
+    # but additional checks must be made
+    try:
+        user = User.objects.get(id=request.user.id)
+    except User.DoesNotExist:
+        return Response({"message": "User was not found"}, status=status.HTTP_404_NOT_FOUND)
+    # User must be a chef
+    if user.role != "chef":
+        return Response({"message": "User must be a chef. Permission denied."}, status=status.HTTP_401_UNAUTHORIZED)
+    
+    user_profile = UserProfile.objects.filter(user=user).first()
+    restaurant_profile = Restaurant.objects.filter(user=user).first()
+
+    # Requests request
+    if request.method == 'GET':
+        serializer = RestaurantSerializer(restaurant_profile)
+        restaurant_details = {
+            "id": serializer.data.get("id"),
+            "name": serializer.data.get("name"),
+            "description": serializer.data.get("description"),
+            "ratings": serializer.data.get("ratings"),
+            "image": serializer.data.get("image"),
+            "address": serializer.data.get("address"),
+            "permissions": {
+                "is_superuser": user.is_superuser,
+                "is_driver": user.role == "logistics",
+                "is_restaurant": user.role == "chef",
+                "is_customer": user.role == "customer"
+            }
+        }
+        return Response(restaurant_details, status=status.HTTP_200_OK)
+
+    elif request.method == 'PUT':
+        data = request.data
+        # name, description, image, address
+        if data.get("kitchen_id"):
+            return Response({"message":"You are not allowed to update kitchen id via this route"}, status=status.HTTP_401_UNAUTHORIZED)
+        serializer = RestaurantSerializer(restaurant_profile, data=data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response({"message": "Http method not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+# DRIVER PROFILE
+@api_view(['PUT', 'GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated, IsUserVerified])
+def get_driver_profile(request):
+    # Get User object
+    # The case of user not existing given the token is highly unlikely
+    # but additional checks must be made
+    try:
+        user = User.objects.get(id=request.user.id)
+    except User.DoesNotExist:
+        return Response({"message": "User was not found"}, status=status.HTTP_404_NOT_FOUND)
+    
+    # User must be a driver
+    if user.role != "logistics":
+        return Response({"message": "User must be a driver"}, status=status.HTTP_404_NOT_FOUND)
+
+    user_profile = UserProfile.objects.filter(user=user).first()
+    driver_profile = Driver.objects.filter(user=user).first()
+
+    if request.method == 'GET':
+        serializer = DriverSerializer(driver_profile)
+        driver_details = {
+            "id": serializer.data.get("id"),
+            "restaurant_id": serializer.data.get("restaurant"),
+            "vehicle_color": serializer.data.get("vehicle_color"),
+            "vehicle_description": serializer.data.get("vehicle_description"),
+            "vehicle_number": serializer.data.get("vehicle_number"),
+            "available": serializer.data.get("available"),
+            "permissions": {
+                "is_superuser": user.is_superuser,
+                "is_driver": user.role == "logistics",
+                "is_restaurant": user.role == "chef",
+                "is_customer": user.role == "customer"
+            }
+        }
+        return Response(driver_details, status=status.HTTP_200_OK)
+    elif request.method == 'PUT':
+        data = request.data
+        # name, description, image, address
+        if data.get("driver_id"):
+            return Response({"message":"You are not allowed to update driver id via this route"}, status=status.HTTP_401_UNAUTHORIZED)
+        serializer = DriverSerializer(driver_profile, data=data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+    return Response({"message": "This is the driver's profile"}, status=status.HTTP_200_OK)
+
+
 # DRIVER AUTH VIEWS
 @api_view(['POST'])
 def login_driver(request):
@@ -190,22 +316,25 @@ def login_driver(request):
     password = data.get("password")
 
     if not driver_id:
-        return Response({"detail": "driver_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "driver_id is required"}, status=status.HTTP_400_BAD_REQUEST)
     if not password:
-        return Response({"detail": "password is required"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "password is required"}, status=status.HTTP_400_BAD_REQUEST)
     
     # Search if the driver exists in either the Driver or User models
     try:
         user = User.objects.filter(username=driver_id).first()
     except User.DoesNotExist:
         user = None
-        return Response({"detail": "user does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "user does not exist"}, status=status.HTTP_400_BAD_REQUEST)
     
     try:
         driver = Driver.objects.filter(driver_id=driver_id).first()
     except Driver.DoesNotExist:
         driver = None
-        return Response({"detail": "driver does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "driver does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if not user:
+        return Response({"message": "User does not exist. "}, status=status.HTTP_400_BAD_REQUEST)
     
     if not user.is_verified:
         return Response({"message": "User is not verified"}, status=status.HTTP_401_UNAUTHORIZED)
@@ -226,8 +355,10 @@ def login_driver(request):
                 }
             }, status=status.HTTP_200_OK)
         else:
-            return Response({"detail": "password is incorrect"}, status=status.HTTP_400_BAD_REQUEST)
-    return Response({"detail": "user with driver id does exists"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "password is incorrect"}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({"message": "user with driver id does exists"}, status=status.HTTP_400_BAD_REQUEST)
+
+# Get Driver profile
 
 
 # This api view should only be assessed by restaurants (kitchens) and admin
