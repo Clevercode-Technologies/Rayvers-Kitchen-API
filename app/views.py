@@ -86,23 +86,14 @@ class CategoryViewDetails(APIView):
         # Get all the dishes under this category
         dishes = models.Dish.objects.filter(category__id=pk).order_by("-pk")
 
-        # Use the pagination class to paginate the dishes queryset
-        paginator = CustomPageNumberPagination()
-        paginated_dishes = paginator.paginate_queryset(dishes, self.request)
-
         # Serialize the paginated dishes
-        dishes_serialized = serializers.DishSerializer(paginated_dishes, many=True)
+        dishes_serializer = serializers.DishSerializer(dishes, many=True)
 
         context = {
             "id": serializer.data.get("id"),
             "name": serializer.data.get("name"),
             "image": serializer.data.get("image"),
-            "dishes": {
-                "count": paginator.page.paginator.count,
-                "next": paginator.get_next_link(),
-                "previous": paginator.get_previous_link(),
-                "results": dishes_serialized.data
-            }
+            "dishes": dishes_serializer.data,
         }
 
         return Response(context, status=status.HTTP_200_OK)
@@ -144,6 +135,8 @@ class DishesViewList(APIView):
         paginated_dishes = paginator.paginate_queryset(dishes, self.request)
 
         serializer = self.serializer_class(paginated_dishes, many=True)
+
+        print(serializer.data)
     
         return Response({
             'count': paginator.page.paginator.count,
@@ -151,6 +144,10 @@ class DishesViewList(APIView):
             'previous': paginator.get_previous_link(),
             'results': serializer.data
         })
+
+        
+
+        
 
     def post(self, *args, **kwargs ):
         data = self.request.data
@@ -222,6 +219,8 @@ class ResturantViewList(APIView):
 
         paginated_restaurants = paginator.paginate_queryset(restaurants, self.request)
 
+        
+
         serializer = self.serializer_class(paginated_restaurants, many=True)
 
 
@@ -246,10 +245,28 @@ class RestaurantViewDetails(APIView):
 
     def get(self, request, *args, **kwargs):
         pk = kwargs["pk"]
+
+        # Get all the dishes under this category
+        # dishes = models.Dish.objects.filter(restaurant__id=).order_by("-pk")
         try:
             restaurant = models.Restaurant.objects.get(pk=pk)
+            # Get all the dishes under this category
+            dishes = models.Dish.objects.filter(category__id=pk).order_by("-pk")
+
+            # Serialize the paginated dishes
+            dishes_serializer = serializers.DishSerializer(dishes, many=True)
             serializer = self.serializer_class(restaurant)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            restaurant_details = {
+                "id": serializer.data.get("id"),
+                "name": serializer.data.get("name"),
+                "image": serializer.data.get("image"),
+                "description": serializer.data.get("description"),
+                "name": serializer.data.get("name"),
+                "ratings": serializer.data.get("ratings"),
+                "address": serializer.data.get("address"),
+                "dishes": dishes_serializer.data
+            }
+            return Response(restaurant_details, status=status.HTTP_200_OK)
         except models.Restaurant.DoesNotExist:
             return Response({"details": "restaurant with id not found"}, status=status.HTTP_404_NOT_FOUND)
         

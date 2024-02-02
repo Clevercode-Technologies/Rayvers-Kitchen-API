@@ -90,11 +90,18 @@ class Dish(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="dish_category") 
     price = models.DecimalField(max_digits=10, decimal_places=2)
     ingredients = models.ManyToManyField(Ingredient, related_name="dish_ingredients")
-    restaurant = models.ForeignKey(Restaurant, related_name="restaurants", on_delete=models.CASCADE)
+    restaurant = models.ForeignKey(Restaurant, related_name="dishes", on_delete=models.CASCADE)
     ratings = models.DecimalField(default=0, max_digits=3, decimal_places=1)
     favourite = models.ManyToManyField(User, related_name="favourites", blank=True)
 
     # Add other fields as needed...
+
+    @property
+    def _ingredients(self):
+        ingredients = self.ingredients
+        all_ingredients = [ing.name for ing in self.ingredients.all()]
+        return all_ingredients
+
 
     @property
     def restaurant_details(self):
@@ -117,7 +124,7 @@ class Dish(models.Model):
         return {
             "id": self.id,
             "name": self.category.name,
-            "image": self.category.image
+            "image": self.category.image.url
         }
 
     def __str__(self):
