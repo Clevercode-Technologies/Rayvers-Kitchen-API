@@ -18,7 +18,7 @@ class DishSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = models.Dish
-        fields = ['id', 'name', 'description', 'price', 'restaurant', 'ratings', 'favourite', 'restaurant_details', 'get_category', 'images', 'category']
+        fields = ['id', 'name', 'description', 'price', 'restaurant', 'ratings', '_ingredients', 'favourite', 'restaurant_details', 'get_category', 'images', 'category']
 
     def create(self, validated_data):
         images_data = self.context['request'].data.getlist('images', [])
@@ -61,7 +61,6 @@ class DriverSerializer(serializers.ModelSerializer):
             'current_location_longitude',
         ]
     
-
 
 class OrderItemSerializer(serializers.ModelSerializer):
     food_item = DishSerializer()
