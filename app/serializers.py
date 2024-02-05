@@ -18,7 +18,7 @@ class DishSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = models.Dish
-        fields = ['id', 'name', 'description', 'price', 'restaurant', 'ratings', '_ingredients', 'favourite', 'restaurant_details', 'get_category', 'images', 'category']
+        fields = ['id', 'name', 'delivery_options', 'time_duration', 'description', 'price', 'restaurant', 'ratings', '_ingredients', 'favourite', 'restaurant_details', 'get_category', 'images', 'category']
 
     def create(self, validated_data):
         images_data = self.context['request'].data.getlist('images', [])
@@ -43,6 +43,7 @@ class RestaurantSerializer(serializers.ModelSerializer):
             'ratings',
             'image',
             'address',
+            "_dishes"
         ]
 
 class DriverSerializer(serializers.ModelSerializer):

@@ -37,9 +37,31 @@ class Restaurant(models.Model):
     def __str__(self):
         return f"Restaurant: {self.user.email}"
     
+
+    @property
+    def _dishes(self):
+        dishes = self.dishes.all().order_by("-pk")
+        all_dishes = [{
+            "id": dish.id, 
+            "name": dish.name, 
+            "ratings": dish.ratings,
+            "description": dish.description,
+            "delivery_options": dish.delivery_options,
+            "time_duration": dish.time_duration,
+            "get_category": dish.get_category,
+            "price": dish.price,
+            "_ingredients": dish._ingredients,
+            "get_category": dish.get_category,
+            "favourite": [fav.id for fav in dish.favourite.all()],
+            "get_images": dish.get_images,
+        } for dish in dishes]
+        return all_dishes
+    
     class Meta:
         verbose_name_plural = "Restaurants"
         verbose_name = "Restaurant"
+    
+
 
 # Listens for chef that was created
 @receiver(post_save, sender=User)
@@ -109,7 +131,6 @@ class Dish(models.Model):
         return {
             "name": restaurant.name,
             "ratings": restaurant.ratings,
-
         }
 
     @property
