@@ -43,6 +43,7 @@ class RestaurantSerializer(serializers.ModelSerializer):
             'ratings',
             'image',
             'address',
+            "_dishes"
         ]
 
 class DriverSerializer(serializers.ModelSerializer):

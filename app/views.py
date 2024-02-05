@@ -264,7 +264,7 @@ class RestaurantViewDetails(APIView):
                 "name": serializer.data.get("name"),
                 "ratings": serializer.data.get("ratings"),
                 "address": serializer.data.get("address"),
-                "dishes": dishes_serializer.data
+                "_dishes": serializer.data.get("_dishes"),
             }
             return Response(restaurant_details, status=status.HTTP_200_OK)
         except models.Restaurant.DoesNotExist:

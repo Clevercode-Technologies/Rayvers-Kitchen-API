@@ -847,3 +847,19 @@ The PUT request, on the other hand requires a payload, same as the POST request.
 
 
 
+
+
+
+# Pagination
+
+
+The pagination is used with Query Parameters like:
+
+`https://example.com/api/categories/?page_size=10&page=1`
+
+Those are the default values for `page` and `page_size`. There is usually 10 items in one page. If your page is 2, I guess you'll receive the next 10 items, depending on your page size. If your `page_size` is 20, it means you want 20 items per page...
+
+
+And the `⁠count` attribute is used to tell the number of items there are per page. So with it you can set a limit to your frontend, make it not fetch anymore data once you've arrived at the `⁠count⁠`.
+
+
