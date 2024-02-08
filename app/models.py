@@ -110,7 +110,7 @@ class Dish(models.Model):
     delivery_options = models.CharField(choices=DELIVERY_OPTIONS, max_length=5, default="free")
     time_duration = models.IntegerField(verbose_name="Time it takes to deliver.", help_text="In minutes.", default=0, blank=False, null=False)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="dish_category") 
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    price = models.IntegerField()
     ingredients = models.ManyToManyField(Ingredient, related_name="dish_ingredients")
     restaurant = models.ForeignKey(Restaurant, related_name="dishes", on_delete=models.CASCADE)
     ratings = models.DecimalField(default=0, max_digits=3, decimal_places=1)
@@ -120,7 +120,6 @@ class Dish(models.Model):
 
     @property
     def _ingredients(self):
-        ingredients = self.ingredients
         all_ingredients = [ing.name for ing in self.ingredients.all()]
         return all_ingredients
 
@@ -156,13 +155,14 @@ class Dish(models.Model):
         verbose_name = "Dish"
 
 class Order(models.Model):
+    
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    total_price = models.DecimalField(max_digits=10, decimal_places=2)
+    total_price = models.IntegerField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    
     is_delivered = models.BooleanField(default=False)
-    assigned_driver = models.ForeignKey('Driver', on_delete=models.CASCADE, null=True, blank=True)
-    tracking_url = models.URLField(null=True, blank=True)
-    payment_status = models.BooleanField(default=False)
+    
+    payment_status = models.BooleanField(verbose_name="Has Paid?", default=False)
 
     def __str__(self):
         return f"Order #{self.id} by {self.user.email}"
@@ -172,12 +172,22 @@ class Order(models.Model):
         verbose_name = "Order"
 
 class OrderItem(models.Model):
-    food_item = models.ForeignKey(Dish, on_delete=models.CASCADE)
+    ORDER_STATUS_CHOICES = [
+        ("completed", "completed"),
+        ("pending", "pending"), 
+        ("cancelled", "cancelled")
+    ]
+    dish = models.ForeignKey(Dish, on_delete=models.CASCADE)
+    driver = models.ForeignKey('Driver', on_delete=models.CASCADE, null=True, blank=True)
+    restaurant = models.ForeignKey('Restaurant', on_delete=models.CASCADE, null=True, blank=True)
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
-    quantity = models.PositiveIntegerField()
+    status = models.CharField(choices=ORDER_STATUS_CHOICES, max_length=10, default="pending")
+    quantity = models.PositiveIntegerField(blank=True, null=True)
+    amount = models.IntegerField(blank=True, null=True)
+
 
     def __str__(self):
-        return f"{self.quantity} x {self.food_item.name} in Order #{self.order.id}"
+        return f"{self.quantity} x {self.dish.name} in Order #{self.order.id}"
     
     class Meta:
         verbose_name_plural = "Order Items"

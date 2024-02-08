@@ -863,3 +863,281 @@ Those are the default values for `page` and `page_size`. There is usually 10 ite
 And the `⁠count` attribute is used to tell the number of items there are per page. So with it you can set a limit to your frontend, make it not fetch anymore data once you've arrived at the `⁠count⁠`.
 
 
+# PAYMENT INTEGRATION WITH STRIPE
+In order for payments to be processed a payment intent must be created using strip.
+The client should send an object containing the amount the total amount to be paid 
+to the server with the following url endpoint:
+
+## /api/payment/intent/ POST
+```json
+{
+  "amount": 2000,
+  "currency_code": "usd"
+}
+
+```
+The above amount value `2000` in the payload represent `20 usd` which is equivalently `20 * 100` or `{total} * 100`. 
+After the payment intent has been created, the client will get back a success response with the following response body :
+
+```json
+  {
+    "payment_intent_secret": "pi_3OhHi24eGaAoGO3h0u6gK1j_secret_sNrZa3Vl0XQj9dDoCRTWERZSo"
+  }
+
+```
+
+### Potential error responses:
+These errors occur when a currencies with relatively low exchange rate like Naira is used with stripe.
+
+```json
+{
+    "message": "Something went wrong: Request req_8xS8MfJKBnov7c: Amount must convert to at least 50 cents. 0.20 ₦ converts to approximately €0.00."
+}
+
+{
+    "message": "Something went wrong: Request req_IpeDAKfFWG8KQw: Amount must be no more than 999,999.99 ₦"
+}
+
+{
+    "message": "Something went wrong: Unexpected error communicating with Stripe.  If this problem persists,\nlet us know at support@stripe.com.\n\n(Network error: ConnectionError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')))"
+}
+
+```
+
+- The first error response would occur only when the amount in naira is relatively lesser than 50 American cents.
+- The second error response, on the other hand, would occur if the value in naira is greater than ₦999,999.
+
+- The fourth is as a result of network error.
+
+
+# Create orders
+## /api/orders/ POST
+When a customer creates an order, the client should send the following payload to the backend service:
+
+```json
+  {
+    "total_price": 6800,
+    "payment_status": true,
+    "is_delivered": false,
+
+    "items": [
+        {
+            "dish_id": 1,
+            "restaurant_id": 1,
+            "amount": 400,
+            "quantity": 2
+        },
+        {
+            "dish_id": 3,
+            "restaurant_id": 1,
+            "amount": 3000,
+            "quantity": 2
+
+        }
+    ]
+
+}
+
+```
+`payment_status` is a boolean value.
+It should be set to `true` if payments were successfull.
+
+`is_delivered` status can be modified later, but its default value is `false`. 
+
+The `total_price` must correllate with the total price of all the `items` in the `items` array.
+This is to say the `total_price` must be `(item[0].amount * item[0].quantity) + (item[2].amount * item[2].quantity)`. If there is no correlation, an error response would be raised.
+
+
+For each item in the array of items in the payload, the `dish_id` field is the id of the dish you are sending from the cart data. The `restaurant_id` is the unique id of the restaurant. Please note that this is not the same as the `kitchen_id`. The `kitchen_id` is only used for user authentiction. 
+
+## Response body
+```json
+
+{
+    "id": 66,
+    "user": 2,
+    "total_price": 6800,
+    "created_at": "2024-02-08T12:53:28.862377Z",
+    "is_delivered": false,
+    "payment_status": true,
+    "items": [
+        {
+            "id": 71,
+            "quantity": 2,
+            "amount": 400,
+            "status": "pending",
+            "dish": {
+                "id": 1,
+                "name": "Jollof Rice",
+                "time_duration": 0,
+                "description": "This is the best food you have ever tasted",
+                "price": 400,
+                "restaurant": 1,
+                "ratings": "5.0",
+                "restaurant_details": {
+                    "name": "",
+                    "ratings": 0.0
+                },
+                "get_category": {
+                    "id": 1,
+                    "name": "english meals",
+                    "image": "/media/category/Screen_Shot_2024-01-24_at_3.14.41_PM.png"
+                },
+                "images": [
+                    {
+                        "id": 1,
+                        "file": "/media/dishes/wiz_C06uxkq.png",
+                        "label": "image 1"
+                    },
+                    {
+                        "id": 2,
+                        "file": "/media/dishes/wiz_RG5bfCI.png",
+                        "label": "Image 2"
+                    }
+                ]
+            },
+            "driver": null
+        },
+        {
+            "id": 72,
+            "quantity": 2,
+            "amount": 3000,
+            "status": "pending",
+            "dish": {
+                "id": 3,
+                "name": "Swallow Eba",
+                "time_duration": 0,
+                "description": "This is the description",
+                "price": 3000,
+                "restaurant": 1,
+                "ratings": "0.0",
+                "restaurant_details": {
+                    "name": "",
+                    "ratings": 0.0
+                },
+                "get_category": {
+                    "id": 3,
+                    "name": "english meals",
+                    "image": "/media/category/Screen_Shot_2024-01-24_at_3.14.41_PM.png"
+                },
+                "images": [
+                    {
+                        "id": 3,
+                        "file": "/media/dishes/ananthu-ganesh-qHvgQUE43a8-unsplash.jpg",
+                        "label": ""
+                    }
+                ]
+            },
+            "driver": null
+        }
+    ]
+}
+
+
+```
+
+# Get Recent order items
+## /api/orderitems/ GET
+## /api/orderitems/<id>/ GET
+
+The response from the order items endpoint is dependent on the authenticated user based on the auth token provided in the http header. 
+
+In order to fetch the user's orders, whether they be driver, restaurant or customer, the client should send a GET request to the above endpont.
+How this works is that the user will see all his orders and can also get the detail of orders if they request based on the `id`. 
+
+## Response Body
+
+```json
+[
+    {
+        "id": 66,
+        "quantity": 2,
+        "amount": 300,
+        "status": "completed",
+        "dish": {
+            "id": 2,
+            "name": "Fried Rice",
+            "time_duration": 30,
+            "description": "This is my favorite dish abeg.",
+            "price": 300,
+            "restaurant": 1,
+            "ratings": "4.0",
+            "restaurant_details": {
+                "name": "",
+                "ratings": 0.0
+            },
+            "get_category": {
+                "id": 2,
+                "name": "english meals",
+                "image": "/media/category/Screen_Shot_2024-01-24_at_3.14.41_PM.png"
+            },
+            "images": [
+                {
+                    "id": 1,
+                    "file": "/media/dishes/wiz_C06uxkq.png",
+                    "label": "image 1"
+                },
+                {
+                    "id": 2,
+                    "file": "/media/dishes/wiz_RG5bfCI.png",
+                    "label": "Image 2"
+                }
+            ]
+        },
+        "driver": {
+            "id": 1,
+            "driver_id": "Jose",
+            "vehicle_image": null,
+            "restaurant": 1,
+            "vehicle_color": "red",
+            "vehicle_description": "The vehicle is red",
+            "vehicle_number": "398GHS293",
+            "available": true,
+            "current_location_latitude": null,
+            "current_location_longitude": null
+        }
+    }
+]
+
+```
+
+### Using Query Parameters to determine the nature of response
+
+In order to get the orderitems that should be listed as `history` or `ongoing`, query parameters are used in the request.
+For instance, if you intend on getting historical data of the order items, you should send your request to the orderitems endpoint and a query parameter should be sent as well as follows:
+
+### /api/orderitems/?option=history GET
+Or
+### /api/orderitems/?option=ongoing GET
+Note that `option` is the key and `ongoing` or `history` are the values of the query.
+The query parameters will determine the result gotten from the response body.
+The `ongoing` option will return `pending` orders. 
+The `history` option, on the other hand, will return all the orders that are that are either `completed` or `cancelled`.
+
+This is the same for all users.
+
+### Orders can also be updated via a PUT request.
+## /api/orderitems/<id>/ PUT
+
+In order to change order items fields like `driver` assigned. You need to provide the payload containing either the `driver` id or `status`.
+
+```json
+
+  {
+    "driver": 1,
+    "status": "completed"
+  }
+
+```
+
+The `status` must be one of the following options: -- `completed`, `pending` or `cancelled`. The client must send one of the following as the current status: `completed`, `pending` or `cancelled`.
+When an order is saved, the status of the each item in the items array is `pending`. The client can update it using the above endpoint.
+The `driver` field is the id of the assigned driver.
+
+
+
+
+
+
+
+
