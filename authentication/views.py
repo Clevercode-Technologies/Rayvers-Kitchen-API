@@ -422,6 +422,7 @@ def get_current_user_profile(request):
         user = get_user_from_token(request)
         if user:
             userData = {
+                "id": user.id,
                 "email": user.email,
                 "name": user.profile.name,
                 "date_of_birth": user.profile.date_of_birth,

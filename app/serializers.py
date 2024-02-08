@@ -62,20 +62,32 @@ class DriverSerializer(serializers.ModelSerializer):
             'current_location_longitude',
         ]
     
+# A serializer for ordered dishes
+class OrderedDishSerializer(serializers.ModelSerializer):
+    images = ImageSerializer(many=True, read_only=True)
+    class Meta:
+        model = models.Dish
+        fields = ['id', 'name', 'time_duration', 'description', 'price', 'restaurant', 'ratings','restaurant_details', 'get_category', 'images']
 
 class OrderItemSerializer(serializers.ModelSerializer):
-    food_item = DishSerializer()
-
+    dish = OrderedDishSerializer(read_only=True)
+    driver = DriverSerializer(read_only=True)
     class Meta:
         model = models.OrderItem
-        fields = ['id', 'food_item', 'quantity']
+        fields = ['id', 'quantity', 'amount', 'status', 'dish', 'driver']
+
+class OrderItemDetailSerializer(serializers.ModelSerializer):
+    dish = OrderedDishSerializer(read_only=True)
+    driver = DriverSerializer(read_only=True)
+    class Meta:
+        model = models.OrderItem
+        fields = ['id', 'status', 'dish', 'driver']
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
 
     class Meta:
         model = models.Order
-        fields = ['id', 'user', 'total_price', 'created_at', 'is_delivered', 'assigned_driver', 'tracking_url', 'payment_status', 'items']
-
+        fields = ['id', 'user', 'total_price', 'created_at', 'is_delivered', 'payment_status', 'items']
 
 

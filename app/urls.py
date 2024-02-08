@@ -30,10 +30,13 @@ urlpatterns = [
     path("drivers/", primary_views.DriversViewList.as_view(), name="driver_list"),
     path("drivers/<int:pk>/", primary_views.DriverViewDetails.as_view(), name="driver_detail"),
 
+    path('payment/intent/', secondary_views.payment_intent_stripe, name="payment_intent_stripe"),
+
     # Secondary Views
-    path('custom/', include(router.urls)),
-    
-    
+    # path('customers/', include(router.urls)),
+    path('orders/', secondary_views.OrderCustomerListView.as_view(), name="customer_order"),
+    path('orderitems/', secondary_views.OrderItemsListForAllUsers.as_view(), name="orderitems_list"),
+    path('orderitems/<int:pk>/', secondary_views.OrderItemsDetailsForAllUsers.as_view(), name="orderitems_details"),
 ] 
 
 

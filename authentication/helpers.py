@@ -6,8 +6,6 @@ from pydantic import BaseModel
 import random
 import requests
 import json
-import asyncio
-import aiohttp
 
 
 
@@ -79,19 +77,6 @@ def send_registration_code_mail(code, email):
         print(f"Request exception: {e}")
         return 400
     
-
-
-# async def send_registration_code_mail_async(code, email):
-#     url = "http://localhost:3000/api/register"
-#     headers = {"Content-Type": "application/json"}
-
-#     async with aiohttp.ClientSession() as session:
-#         try:
-#             async with session.post(url, data=json.dumps({"userCode": code, "email": email}), headers=headers, timeout=10) as response:
-#                 return response.status
-#         except aiohttp.ClientError as e:
-#             print(f"Async request to external API failed: {e}")
-#             return 400
         
 
 def check_if_code_matches(userCode, code):
