@@ -537,7 +537,7 @@ The response above `count` represents the number of items in the list or array d
 The `next` indicate the endpoint for the next set of items; `prev` does quite the opposite.
 
 
-### /api/restaurants/<id>/ GET
+### /api/restaurants/(id)/ GET
 The above endpoint is used to retrieve the detail view of any given restaurant in the database.
 The response below will be given if the request was successful:
 
@@ -749,7 +749,7 @@ For a POST request, you can decide to use a formData to send your request with t
 ```
 The `images` field is best handled using formData. But you can use it in other ways based on your use case.
 
-### /api/dishes/<id>/ GET
+### /api/dishes/(id)/ GET
 
 The `id` parameter is used to get a specific dish. If a non-existent id is not provided, a 404 NOT FOUND response would be received by the client. In order to avoid this the right id must be given.
 
@@ -792,7 +792,7 @@ The expected response gotten will be as follows:
 }
 
 ```
-### /api/dishes/<id>/ GET, PUT, DELETE
+### /api/dishes/(id)/ GET, PUT, DELETE
 Get request retrieves a single item by `id`.
 The delete and the put requests are used for updating or permanently deleting the dish item.
 
@@ -837,7 +837,7 @@ After being created, the response will contain the payload created.
 
 
 
-## /api/categories/<id>/ GET, PUT, DELETE
+## /api/categories/(id)/ GET, PUT, DELETE
 The GET request will retrieve a single item based on the id provided as parameter.
 
 The delete and the put requests are used for updating or permanently deleting categories.
@@ -1038,7 +1038,7 @@ For each item in the array of items in the payload, the `dish_id` field is the i
 
 # Get Recent order items
 ## /api/orderitems/ GET
-## /api/orderitems/<id>/ GET
+## /api/orderitems/(id)/ GET
 
 The response from the order items endpoint is dependent on the authenticated user based on the auth token provided in the http header. 
 
@@ -1117,7 +1117,7 @@ The `history` option, on the other hand, will return all the orders that are tha
 This is the same for all users.
 
 ### Orders can also be updated via a PUT request.
-## /api/orderitems/<id>/ PUT
+## /api/orderitems/(id)/ PUT
 
 In order to change order items fields like `driver` assigned. You need to provide the payload containing either the `driver` id or `status`.
 
