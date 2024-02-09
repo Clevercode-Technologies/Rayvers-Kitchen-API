@@ -79,7 +79,7 @@ def create_restaurant(sender, instance=None, created=False, **kwargs):
         instance.save()
         restaurant.kitchen_id = username
         restaurant.save()
-        print("A restaurant was created")
+        # print("A restaurant was created")
 
 
 
@@ -226,7 +226,7 @@ def create_driver(sender, instance=None, created=False, **kwargs):
         instance.save()
         driver.driver_id = username
         driver.save()
-        print("A driver was created")
+        # print("A driver was created")
         
 
 class DeliveryStatus(models.Model):

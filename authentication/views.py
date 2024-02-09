@@ -123,7 +123,7 @@ def create_new_user(request):
                     }
                     
                     response_gotten_from_code = send_registration_code_mail(code, user_details["email"])
-                    print("The response status I got from the code registration: ", response_gotten_from_code)
+                    # print("The response status I got from the code registration: ", response_gotten_from_code)
 
                     return Response(user_details, status=status.HTTP_201_CREATED)
                 else:
@@ -148,7 +148,7 @@ def verify_user_upon_registration(request):
     try:
         user = User.objects.get(id=user_id)
     except User.DoesNotExist:
-        print("something wrong occurred --- User does not exist.")
+        # print("something wrong occurred --- User does not exist.")
         return Response({"message": "User does not exist."}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
@@ -163,7 +163,7 @@ def verify_user_upon_registration(request):
         else:
             return Response({"message": "User code is invalid"}, status=status.HTTP_400_BAD_REQUEST)
     except AssertionError:
-        print("Values must be valid integers")
+        # print("Values must be valid integers")
         return Response({"message": "Values must be valid integers"}, status=status.HTTP_400_BAD_REQUEST)
 
 # Retry Verify user registration
@@ -182,7 +182,7 @@ def verify_user_retry_code(request):
     try:
         user = User.objects.get(id=user_id)
     except User.DoesNotExist:
-        print("User does not exist.")
+        # print("User does not exist.")
         return Response({"message": "Invalid user id. User does not exist."}, status=status.HTTP_400_BAD_REQUEST)
     
     # Send some code to user email
@@ -442,7 +442,7 @@ def get_current_user_profile(request):
             return Response({"detail": "Authorization header not found in the request."}, status=status.HTTP_400_BAD_REQUEST)
     elif request.method == 'PUT':
         uploaded_file = request.FILES.get('profile_image')
-        print("This is the file upload: ", uploaded_file)
+        # print("This is the file upload: ", uploaded_file)
         try:
             profile = UserProfile.objects.get(user=request.user)
         except UserProfile.DoesNotExist:

@@ -13,7 +13,7 @@ def generate_random_username(length, max_attempts=100):
     raise ValueError('Could not generate a unique username after {} attempts'.format(max_attempts))
 
 random_username = generate_random_username(6)
-print(random_username)
+# print(random_username)
 
 
 

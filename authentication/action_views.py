@@ -195,7 +195,7 @@ def create_restaurant(request):
 
                 }
                 response_gotten_from_code = send_registration_code_mail(code, serializer.data.get('email'))
-                print("The response status I got from the code registration: ", response_gotten_from_code)
+                # print("The response status I got from the code registration: ", response_gotten_from_code)
 
                 return Response(user_details, status=status.HTTP_201_CREATED)
             else:
@@ -468,7 +468,7 @@ def create_driver(request):
                     "role": serializer.data.get("role"),
                 }
                 response_gotten_from_code = send_registration_code_mail(code, serializer.data.get('email'))
-                print("The response status I got from the code registration: ", response_gotten_from_code)
+                # print("The response status I got from the code registration: ", response_gotten_from_code)
                 return Response(user_details, status=status.HTTP_201_CREATED)
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

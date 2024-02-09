@@ -23,7 +23,7 @@ class DishSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         images_data = self.context['request'].data.getlist('images', [])
 
-        print("images_data: ", type(images_data))
+        # print("images_data: ", type(images_data))
 
         # Create Dish instance
         dish = super(DishSerializer, self).create(validated_data)

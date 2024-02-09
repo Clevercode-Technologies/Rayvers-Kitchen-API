@@ -58,7 +58,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         
         total_price = reduce(lambda x, y: x + (float(y.get("amount", 0)) * int(y.get("quantity", 0))), items_data, 0)
 
-        print("Total price", total_price == data.get("total_price"))
+        # print("Total price", total_price == data.get("total_price"))
 
         if float(total_price) != float(data.get("total_price")):
             return Response({"message": "Conflict in total price. There is a difference between the total price of items and that of the general total price."})
@@ -106,7 +106,7 @@ class OrderCustomerListView(APIView):
         
         total_price = reduce(lambda x, y: x + (float(y.get("amount", 0)) * int(y.get("quantity", 0))), items_data, 0)
 
-        print("Total price", total_price == data.get("total_price"))
+        # print("Total price", total_price == data.get("total_price"))
 
         if int(total_price) != int(data.get("total_price")):
             return Response({"message": "Conflict in total price. There is a difference between the total price of items and that of the general total price."})
@@ -174,9 +174,9 @@ class OrderItemsListForAllUsers(APIView):
         user_is_driver = user.role == "logistics"
         user_is_restaurant = user.role == "chef"
 
-        print("user_is_customer: ", user_is_customer)
-        print("user_is_driver: ", user_is_driver)
-        print("user_is_restaurant: ", user_is_restaurant)
+        # print("user_is_customer: ", user_is_customer)
+        # print("user_is_driver: ", user_is_driver)
+        # print("user_is_restaurant: ", user_is_restaurant)
 
         if user_is_customer:
             # User is a customer
