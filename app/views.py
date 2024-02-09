@@ -136,7 +136,7 @@ class DishesViewList(APIView):
 
         serializer = self.serializer_class(paginated_dishes, many=True)
 
-        print(serializer.data)
+        # print(serializer.data)
     
         return Response({
             'count': paginator.page.paginator.count,
@@ -157,7 +157,7 @@ class DishesViewList(APIView):
         # Get the chef models to see if the requesting user is a chef
         try:
             chef = models.Restaurant.objects.get(user=self.request.user)
-            print(chef.id)
+            # print(chef.id)
         except:
             return Response({"message": "You must be logged in as a chef to add dishes"}, status=status.HTTP_401_UNAUTHORIZED)
 

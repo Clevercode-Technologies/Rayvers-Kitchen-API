@@ -74,7 +74,7 @@ def send_registration_code_mail(code, email):
         return 408  # HTTP 408 Request Timeout
     except requests.RequestException as e:
         # Handle other request exceptions
-        print(f"Request exception: {e}")
+        # print(f"Request exception: {e}")
         return 400
     
         
