@@ -283,6 +283,11 @@ def payment_intent_stripe(request):
     amount = int(float(request.data.get("amount")))
     currency_code = request.data.get("currency_code")
 
+    if not amount:
+        return Response({"message": f"amount field is required"}, status=status.HTTP_400_BAD_REQUEST)
+    if not currency_code:
+        return Response({"message": f"currency_code field is required"}, status=status.HTTP_400_BAD_REQUEST)
+
     try:
         payment_intent_stripe = stripe.PaymentIntent.create(
             amount=amount,
