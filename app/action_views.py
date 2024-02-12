@@ -279,8 +279,7 @@ class OrderItemsDetailsForAllUsers(APIView):
 @permission_classes([IsAuthenticated, IsUserVerified])
 def payment_intent_stripe(request):
     stripe.api_key = config("STRIPE_SECRET_KEY")
-
-    amount = int(float(request.data.get("amount")))
+    amount = request.data.get("amount")
     currency_code = request.data.get("currency_code")
 
     if not amount:
@@ -288,14 +287,16 @@ def payment_intent_stripe(request):
     if not currency_code:
         return Response({"message": f"currency_code field is required"}, status=status.HTTP_400_BAD_REQUEST)
 
+    amount = int(float(request.data.get("amount")))
+    
+
     try:
         payment_intent_stripe = stripe.PaymentIntent.create(
-            amount=amount,
+            amount=int(float(amount)),
             currency=currency_code,
             automatic_payment_methods={"enabled": True},
         )
         return Response({"payment_intent_secret": payment_intent_stripe.client_secret}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({"message": f"Something went wrong: {e}"}, status=status.HTTP_400_BAD_REQUEST)
-
 
