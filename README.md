@@ -1223,6 +1223,15 @@ Note that it is only the review that is approved by the admin will show.
 
 # Rating restaurants
 ## Rate a particular restaurant
+## /api/ingredients/ POST GET
+
+
+
+
+
+
+# Rating restaurants
+## Rate a particular restaurant
 ## /api/restaurants/(id)/ratings/ POST
 
 The parameters to rate a restaurant is the `id` of the restaurant. 

@@ -96,7 +96,7 @@ class RestaurantRating(models.Model):
         user = self.user
         profile = UserProfile.objects.get(user=user)
         user_details = {
-            "display_image": profile.image_url if profile.image_url else profile.get_image_url,
+            "display_image": profile.image_url,
             "email": user.email,
             "username": user.username,
             "role": user.role
