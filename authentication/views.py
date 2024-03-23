@@ -604,7 +604,7 @@ def change_user_username(request):
     username =  request.data.get("username")
 
     if not username:
-        return Response({"username": ["username field is required."]}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"username": ["username field is required."]}, status=status.HTTP_400_BAD_REQUEST)
     
     # Create a check to see if username already exists in the database
     user_existing_in_db = User.objects.filter(username=username).exclude(id=request.user.id)

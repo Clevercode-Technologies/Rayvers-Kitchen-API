@@ -31,11 +31,13 @@ urlpatterns = [
     path('drivers/me/', secondary_views.get_driver_profile, name="driver_profile"),
     path("drivers/token/", secondary_views.login_driver, name="login_driver"),
     path("drivers/", secondary_views.create_driver, name="create_driver"),
+    path("drivers/analytics/", secondary_views.driver_analytics, name="driver_analytics"),
 
     # Restaurant
     path('restaurants/me/', secondary_views.get_restaurant_profile, name="driver_profile"),
     path("restaurants/token/", secondary_views.login_restaurant, name="login_driver"),
     path("restaurants/", secondary_views.create_restaurant, name="create_driver"),
+    path("restaurants/analytics/", secondary_views.restaurant_analytics, name="restaurant_analytics"),
 ]
 
 

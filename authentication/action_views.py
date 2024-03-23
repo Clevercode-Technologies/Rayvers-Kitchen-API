@@ -4,8 +4,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import get_user_model
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from app.permissions import IsRestaurantUser
-from app.models import Driver, Restaurant
+from app.permissions import IsRestaurantUser, IsUserDriver
+from app.models import Driver, Restaurant, OrderItem, Order
 from authentication.models import UserProfile
 from app.permissions import (
     IsUserVerified
@@ -15,8 +15,9 @@ from . import serializers
 from app.serializers import (
     RestaurantSerializer,
     DriverSerializer,
-
+    RestaurantRatingSerializer
 )
+
 from .helpers import check_email, is_valid_password
 
 
@@ -50,7 +51,6 @@ def login_restaurant(request):
         user = None
         return Response({"message": "user does not exist"}, status=status.HTTP_400_BAD_REQUEST)
 
-    
     try:
         restaurant = Restaurant.objects.filter(kitchen_id=kitchen_id).first()
     except Restaurant.DoesNotExist:
@@ -372,7 +372,7 @@ def create_driver(request):
     vehicle_color = data.get("vehicle_color")
     vehicle_description = data.get("vehicle_description")
     vehicle_number = data.get("vehicle_number")
-    available = data.get("available")
+    available = data.get("available", False)
 
 
     # Create driver user
@@ -459,6 +459,7 @@ def create_driver(request):
                     driver.vehicle_color = vehicle_color
                     driver.vehicle_description = vehicle_description
                     driver.vehicle_number = vehicle_number
+                    driver.available = available
                     driver.save()
                 # Object / Dictionary to be returned after user has been created
                 user_details = {
@@ -468,7 +469,93 @@ def create_driver(request):
                     "role": serializer.data.get("role"),
                 }
                 response_gotten_from_code = send_registration_code_mail(code, serializer.data.get('email'))
-                # print("The response status I got from the code registration: ", response_gotten_from_code)
                 return Response(user_details, status=status.HTTP_201_CREATED)
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated & IsUserDriver])
+def driver_analytics(request):
+    # Check if the user accessing this route is a driver
+    # If true, send the driver analytics to the client
+    # Else return a message user does not have the permission
+    if request.user.role != "logistics":
+        return Response({"messge": "User must be a driver"}, status=status.HTTP_401_UNAUTHORIZED)
+    
+    try:
+        driver = Driver.objects.get(user=request.user)
+        ordereditems = OrderItem.objects.filter(driver=driver)
+
+        print("driver: ", driver)
+        print("orderitems by driver: ", ordereditems)
+    except Restaurant.DoesNotExist:
+        return Response({"message": "Driver does not exist"}, status=status.HTTP_404_NOT_FOUND)
+
+    return Response({"message": "Here's your analytics"}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated & IsRestaurantUser])
+def restaurant_analytics(request):
+    # Check if the user accessing this route is a restaurant
+    # If true, send the driver analytics to the client
+    # Else return a message user does not have the permission
+    if request.user.role != "chef":
+        return Response({"messge": "User must be a restaurant or chef"}, status=status.HTTP_401_UNAUTHORIZED)
+    try:
+        restaurant = Restaurant.objects.get(user=request.user)
+        ordereditems = OrderItem.objects.filter(restaurant=restaurant)
+
+        completed_orders_count = ordereditems.filter(status="completed").count()
+        pending_orders_count = ordereditems.filter(status="pending").count()
+        cancelled_orders_count = ordereditems.filter(status="cancelled").count()
+        total_orders = ordereditems.count()
+
+        reviews = restaurant.restaurant_rated.all()
+
+        reviews_serializer = RestaurantRatingSerializer(reviews, many=True).data
+
+       
+
+
+
+        analytics = {
+            "completed_orders_count": completed_orders_count,
+            "pending_orders_count": pending_orders_count,
+            "cancelled_orders_count": cancelled_orders_count,
+            "total_orders": total_orders,
+            "reviews": {
+                "restaurant_ratings": restaurant.ratings,
+                "reviews_count": reviews.count(),
+            },
+            "num_available_drivers": restaurant.driver_set.all().count(),
+            "total_revenue": ""
+        }
+
+        print("reviews: ", reviews)
+
+
+        print("analytics", analytics)
+        print("restaurant", restaurant)
+        print("orderitems by restaurant: ", ordereditems)
+
+
+    except Restaurant.DoesNotExist:
+        return Response({"message": "Restaurant does not exist"}, status=status.HTTP_404_NOT_FOUND)
+    
+    return Response({"message": "Here's your analytics", "analytics": analytics}, status=status.HTTP_200_OK)
+
+
+
+
+
+
+
+

@@ -5,6 +5,7 @@ from rest_framework import status
 from ..serializers import CustomAuthTokenSerializer, UserSerializer
 from datetime import datetime, timezone
 
+
 User = get_user_model()
 
 class CustomAuthTokenSerializerTest(TestCase):
@@ -90,17 +91,21 @@ class UserSerializerTest(TestCase):
 
         # Test the serializer with valid data
         serializer = UserSerializer(instance=self.user)
+        
         expected_data = {
-            'id': self.user.id,
-            'email': 'test@example.com',
-            'is_staff': False,
-            'is_active': True,
-            # 'date_joined': expected_date_joined,
-            'groups': [],
-            'user_permissions': [],
-            'last_login': None,
-            'is_superuser': False,
-
-            # Add other fields as needed
+            "id": self.user.id,
+            "username": "", 
+            "email": "test@example.com", 
+            "is_staff": False, 
+            "is_active": True, 
+            "groups": [], 
+            "user_permissions": [], 
+            "last_login": None, 
+            "is_superuser": False, 
+            "role": "customer", 
+            "code": None
         }
+
         self.assertEqual(serializer.data, expected_data)
+
+

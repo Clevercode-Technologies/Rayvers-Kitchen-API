@@ -16,6 +16,8 @@ class CustomAuthTokenViewTest(TestCase):
             email='test@example.com',
             password='testpassword'
         )
+        self.user.is_verified = True
+        self.user.save()
 
         # Create an API client for making requests
         self.client = APIClient()
@@ -89,7 +91,12 @@ class CreateNewUserTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn("user_id", response.data)
         self.assertIn("email", response.data)
-        self.assertIn("token", response.data)
+        self.assertNotIn("token", response.data)
+        self.assertIn("message", response.data)
+        self.assertIn("role", response.data)
+
+        self.assertEqual(response.data.get("message"), "A verification code has been sent to test@example.com.")
+        self.assertEqual(response.data.get("role"), "customer")
 
     def test_blank_email(self):
         # New user data
@@ -159,6 +166,10 @@ class LogoutViewTest(TestCase):
         # Create a token for the user
         # self.token = Token.objects.create(user=self.user)
 
+        # Ensure user is verified
+        self.user.is_verified = True
+        self.user.save()
+
         # Create an API client for making requests
         self.client = APIClient()
 
@@ -210,6 +221,10 @@ class GetAndUpdateUserProfileDataTest(TestCase):
         # Token is already created with user
         # In order to get the token, one must get it from the user
 
+        # Ensure the user is verified
+        self.user.is_verified = True
+        self.user.save()
+
         self.auth_token = self.user.auth_token.key
 
         # Create an API client for making requests
@@ -227,9 +242,7 @@ class GetAndUpdateUserProfileDataTest(TestCase):
         self.assertIn("email", response.data)
         self.assertIn("name", response.data)
         self.assertIn("date_of_birth", response.data)
-        self.assertIn("is_superuser", response.data)
-        self.assertIn("is_staff", response.data)
-        self.assertIn("is_active", response.data)
+        self.assertIn("permissions", response.data)
         self.assertIn("profile_picture", response.data)
         self.assertIn("bio", response.data)
 
@@ -247,11 +260,11 @@ class GetAndUpdateUserProfileDataTest(TestCase):
 
         response = self.client.put(self.url, data, headers=self.headers)
 
-        self.assertEqual("Juliet", response.data.get("name", ""))
-        self.assertEqual("1996-03-08", response.data.get("date_of_birth", ""))
-        self.assertEqual("08167930376", response.data.get("phone_number", ""))
-        self.assertEqual("This is my fantastic bio.", response.data.get("bio", ""))
-        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual("Juliet", response.data.get("name"))
+        self.assertEqual("1996-03-08", response.data.get("date_of_birth"))
+        self.assertEqual("08167930376", response.data.get("phone_number"))
+        self.assertEqual("This is my fantastic bio.", response.data.get("bio"))
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
 
 
 
