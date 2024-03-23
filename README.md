@@ -739,15 +739,22 @@ For a POST request, you can decide to use a formData to send your request with t
 
 ```json
 {
-  "name": "Jollof Rice",
-  "description": "This is the best food you have ever tasted",
-  "price": 4000,
-  "restaurant": 1,
-  "category": 1,
-  "images": "[ListOfImages base64]" 
+  "name":"Olaf hath hgh jhjhjksara loa",
+  "description":"This is the best food you have ever tasted",
+  "price":4000,
+  "restaurant":1,
+  "category":2,
+  "delivery_options":"paid",
+  "time_duration":20,
+  "images": "[ListOfImages base64]",
+  "ingredients":[1,2,3,4],
+  "image_url": "This is a special image url"
 }
+
 ```
 The `images` field is best handled using formData. But you can use it in other ways based on your use case.
+
+The `ingredients` field is a list or array of ids. Each id must be attributed to an ingredient instance, meaning you must first fetch the ingredients, retrieve their ids and make a request.
 
 ### /api/dishes/(id)/ GET
 
@@ -1133,6 +1140,158 @@ In order to change order items fields like `driver` assigned. You need to provid
 The `status` must be one of the following options: -- `completed`, `pending` or `cancelled`. The client must send one of the following as the current status: `completed`, `pending` or `cancelled`.
 When an order is saved, the status of the each item in the items array is `pending`. The client can update it using the above endpoint.
 The `driver` field is the id of the assigned driver.
+
+
+
+# Rating dishes
+## Rate a particular dish
+## /api/dishes/(id)/ratings/ POST
+
+The parameters to rate a dish is the `id` of the dish. 
+
+### Request payload
+```json
+
+  {
+  "rating_number": 2,
+  "rating_text": "This is my text update forever"
+  }
+
+```
+While the `rating_number` payload field is required, the `rating_text` payload field is not a required field.
+<br>
+The `rating_number` payload field is expected to be a number or an integer.
+If the client does not send an integer, the following error will be
+raised:
+
+```json
+
+{
+  "message": "rating_number must be an integer"
+}
+
+```
+If the `rating_number` is not given, the following error response will be given:
+```json
+{
+  "message": "rating_number is required"
+}
+```
+If, similarly, a dish with the underlying `id` does not exist, an error will also be raised:
+
+```json
+{
+  "message": "dish with id not found"
+}
+```
+
+
+## Get the rating data for a particular dish
+## /api/dishes/(id)/ratings/ GET
+In order to retrieve all the rating data for a particular dish, the client should make a get request to the above endpoint. The rating data consists of the `number` of rating, `text` or recommendation of user, `user_data` which is the author's details and `dish` information.
+
+
+
+### Response:
+```json
+  [
+  {
+    "number": 4,
+    "text": "This is my text update forever",
+    "user_data": {
+      "display_image": "/static/images/user-icon-no-image.png",
+      "email": "admin@gmail.com",
+      "role": "chef"
+    },
+    "dish": {
+      "id": 1,
+      "name": "rice",
+      "images": [
+        {
+          "id": 1,
+          "file": "/media/dishes/removal.ai_9f48d15f-89ad-4488-9ccf-e85a5155cdb5-new-me_TXD2Q8_zmk80jx.png",
+          "label": ""
+        }
+      ]
+    }
+  }
+]
+
+```
+The above response is an array of objects. Each object consists of each user's review.
+Note that it is only the review that is approved by the admin will show.
+
+# Rating restaurants
+## Rate a particular restaurant
+## /api/restaurants/(id)/ratings/ POST
+
+The parameters to rate a restaurant is the `id` of the restaurant. 
+
+### Request payload
+```json
+
+  {
+  "rating_number": 2,
+  "rating_text": "This is my text update forever"
+  }
+
+```
+While the `rating_number` payload field is required, the `rating_text` payload field is not a required field.
+<br>
+The `rating_number` payload field is expected to be a number or an integer.
+If the client does not send an integer, the following error will be
+raised:
+
+```json
+
+{
+  "message": "rating_number must be an integer"
+}
+
+```
+If the `rating_number` is not given, the following error response will be given:
+```json
+{
+  "message": "rating_number is required"
+}
+```
+If, similarly, a restaurant with the underlying `id` does not exist, an error will also be raised:
+
+```json
+{
+  "message": "restaurant with id not found"
+}
+```
+
+
+## Get the rating data for a particular restaurant
+## /api/restaurants/(id)/ratings/ GET
+In order to retrieve all the rating data for a particular restaurant, the client should make a get request to the above endpoint. The rating data consists of the `number` of rating, `text` or recommendation of user, `user_data` which is the author's details and `restaurant` information.
+
+### Response:
+```json
+  [
+  {
+    "number": 4,
+    "text": "This is my text update forever",
+    "user_data": {
+      "display_image": "/static/images/user-icon-no-image.png",
+      "email": "admin@gmail.com",
+      "role": "chef"
+    },
+    "restaurant": {
+      "id": 1,
+      "name": "Reyvers Kitchen",
+      "description": "This is a silly description",
+      "image": "/media/restaurant/removal.ai_9f48d15f-89ad-4488-9ccf-e85a5155cdb5-new-me_TXD2Q8_VYoncWM.png",
+      "address": "This is Reyvers Kitchen Address"
+    }
+  }
+]
+
+```
+The above response is an array of objects. Each object consists of each user's review.
+
 
 
 

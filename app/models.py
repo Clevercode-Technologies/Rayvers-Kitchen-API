@@ -1,12 +1,17 @@
 # models.py
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
-# from .utils import generate_random_username
+
+from authentication.models import UserProfile
+
 import random
 import string
+
+
 
 User = get_user_model()
 
@@ -24,15 +29,30 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+
 class Restaurant(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     kitchen_id = models.CharField(_("Kitchen id"), max_length=20, blank=True, null=False)
-    image = models.ImageField(verbose_name="restauarant image", upload_to="restaurant/", blank=False, null=True)
+    image_url = models.CharField(max_length=2000, blank=True, null=True)
+    image = models.ImageField(verbose_name="restauarant image", upload_to="restaurant/", blank=True, null=True)
     name = models.CharField(max_length=255)
     description = models.TextField()
     address = models.TextField(blank=True)
-    ratings = models.DecimalField(default=0, max_digits=3, decimal_places=1)
+    
     # Other fields as needed will be here...
+
+    # _ratings = models.ManyToManyField(RestaurantRating, related_name="restaurant_ratings")
+
+    @property
+    def ratings(self):
+        all_ratings = self.restaurant_rated.all()
+        min_ratings_required = 2  # Minimum number of ratings required
+        
+        if len(all_ratings) >= min_ratings_required:
+            total_ratings = sum(rating.number for rating in all_ratings)
+            average_rating = total_ratings / len(all_ratings)
+            return round(average_rating, 1)
+        return 0
 
     def __str__(self):
         return f"Restaurant: {self.user.email}"
@@ -61,7 +81,33 @@ class Restaurant(models.Model):
         verbose_name_plural = "Restaurants"
         verbose_name = "Restaurant"
     
+class RestaurantRating(models.Model):
+    number = models.IntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(5)],
+        default=0
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="restaurant_ratings")
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name="restaurant_rated")
+    text = models.TextField(blank=True)
+    approved = models.BooleanField(default=False)
 
+    @property
+    def user_data(self):
+        user = self.user
+        profile = UserProfile.objects.get(user=user)
+        user_details = {
+            "display_image": profile.image_url if profile.image_url else profile.get_image_url,
+            "email": user.email,
+            "username": user.username,
+            "role": user.role
+        }
+        return user_details
+
+    def __str__(self) -> str:
+        return str(self.user.email) + ' -- ' + str(self.number) + " -- " + str(self.restaurant.name)
+    class Meta:
+        verbose_name_plural = "Restaurant Ratings"
+        verbose_name = "Restaurant Rating"
 
 # Listens for chef that was created
 @receiver(post_save, sender=User)
@@ -89,21 +135,30 @@ class Image(models.Model):
 
     def __str__(self):
         return self.file.url
+    
+    class Meta:
+        verbose_name_plural = "Images"
+        verbose_name = "Image"
+    
 
 class Ingredient(models.Model):
+    image_url = models.CharField(max_length=2000, blank=True, null=True)
     name = models.CharField(max_length=255, unique=True)
     
 
     def __str__(self) -> str:
         return self.name
     
+    class Meta:
+        verbose_name_plural = "Ingredients"
+        verbose_name = "Ingredient"
 
-    
 class Dish(models.Model):
     DELIVERY_OPTIONS = [
         ("free", "free"),
         ("paid", "paid")
     ]
+    image_url = models.CharField(max_length=2000, blank=True, null=True)
     name = models.CharField(max_length=255, unique=True)
     images = models.ManyToManyField(Image, related_name='dish_images')
     description = models.TextField(blank=False, null=False)
@@ -113,16 +168,25 @@ class Dish(models.Model):
     price = models.IntegerField()
     ingredients = models.ManyToManyField(Ingredient, related_name="dish_ingredients")
     restaurant = models.ForeignKey(Restaurant, related_name="dishes", on_delete=models.CASCADE)
-    ratings = models.DecimalField(default=0, max_digits=3, decimal_places=1)
+
     favourite = models.ManyToManyField(User, related_name="favourites", blank=True)
 
-    # Add other fields as needed...
+
+    @property
+    def ratings(self):
+        all_ratings = self.dishes_rated.all()
+        min_ratings_required = 1  # Minimum number of ratings required
+        
+        if len(all_ratings) >= min_ratings_required:
+            total_ratings = sum(rating.number for rating in all_ratings)
+            average_rating = total_ratings / len(all_ratings)
+            return round(average_rating, 1)
+        return 0
 
     @property
     def _ingredients(self):
         all_ingredients = [ing.name for ing in self.ingredients.all()]
         return all_ingredients
-
 
     @property
     def restaurant_details(self):
@@ -138,7 +202,6 @@ class Dish(models.Model):
         new_list = list(map(lambda x: {"label": x.label, "url":x.file.url}, images))
         return new_list
     
-
     @property
     def get_category(self):
         return {
@@ -153,6 +216,41 @@ class Dish(models.Model):
     class Meta:
         verbose_name_plural = "Dishes"
         verbose_name = "Dish"
+
+
+
+
+
+class DishRating(models.Model):
+    number = models.IntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(5)],
+        default=0
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="dish_ratings")
+    dish = models.ForeignKey(Dish, on_delete=models.CASCADE, related_name="dishes_rated")
+    text = models.TextField(blank=True)
+    approved = models.BooleanField(default=False)
+
+    @property
+    def user_data(self):
+        user = self.user
+        profile = UserProfile.objects.get(user=user)
+        user_details = {
+            "display_image": profile.image_url if profile.image_url else profile.get_image_url,
+            "email": user.email,
+            "username": user.username,
+            "role": user.role
+        }
+        return user_details
+
+
+    def __str__(self) -> str:
+        return str(self.user.email) + ' -- ' + self.dish.name + ' -- ' + str(self.number)
+    
+    class Meta:
+        verbose_name_plural = "Dish Ratings"
+        verbose_name = "Dish Rating"
+
 
 class Order(models.Model):
     
@@ -177,6 +275,7 @@ class OrderItem(models.Model):
         ("pending", "pending"), 
         ("cancelled", "cancelled")
     ]
+    customer = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     dish = models.ForeignKey(Dish, on_delete=models.CASCADE)
     driver = models.ForeignKey('Driver', on_delete=models.CASCADE, null=True, blank=True)
     restaurant = models.ForeignKey('Restaurant', on_delete=models.CASCADE, null=True, blank=True)
@@ -202,8 +301,8 @@ class Driver(models.Model):
     vehicle_description = models.TextField(blank=True, null=False)
     vehicle_number = models.CharField(max_length=40, blank=True, null=False)
     available = models.BooleanField(default=False)
-    current_location_latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
-    current_location_longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    current_location_latitude = models.DecimalField(max_digits=10, decimal_places=10, null=True, blank=True)
+    current_location_longitude = models.DecimalField(max_digits=10, decimal_places=10, null=True, blank=True)
 
     def __str__(self):
         return f"Driver: {self.user.email}"
@@ -242,7 +341,7 @@ class DeliveryStatus(models.Model):
         return f"Status for Order #{self.order.id}: {self.status}"
     
     class Meta:
-        verbose_name_plural = "Delivery Status"
+        verbose_name_plural = "Delivery Statuses"
         verbose_name = "Delivery Status"
 
 
@@ -254,7 +353,7 @@ class ShoppingCart(models.Model):
         return f"Shopping Cart for {self.user.email}"
     
     class Meta:
-        verbose_name_plural = "Shopping Cart"
+        verbose_name_plural = "Shopping Carts"
         verbose_name = "Cart"
 
 class CartItem(models.Model):
@@ -275,6 +374,7 @@ class Payment(models.Model):
     payment_method = models.CharField(max_length=50)
     transaction_id = models.CharField(max_length=100)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.BooleanField(default=False)
     payment_date = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -283,6 +383,7 @@ class Payment(models.Model):
     class Meta:
         verbose_name_plural = "Payments"
         verbose_name = "Payment"
+
 class PersonalMessage(models.Model):
     sender = models.ForeignKey(User, related_name='sent_messages', on_delete=models.CASCADE)
     receiver = models.ForeignKey(User, related_name='received_messages', on_delete=models.CASCADE)

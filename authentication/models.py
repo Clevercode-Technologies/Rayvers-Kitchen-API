@@ -33,6 +33,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     code = models.IntegerField(blank=True, null=True)
     is_verified = models.BooleanField(default=False)
 
+    # User current Location
+    current_location_latitude = models.DecimalField(max_digits=10, decimal_places=10, null=True, blank=True)
+    current_location_longitude = models.DecimalField(max_digits=10, decimal_places=10, null=True, blank=True)
+
 
     groups = models.ManyToManyField('auth.Group', blank=True, related_name='custom_users+')
     user_permissions = models.ManyToManyField('auth.Permission', blank=True, related_name='custom_users+')

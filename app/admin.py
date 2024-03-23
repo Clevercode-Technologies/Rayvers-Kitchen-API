@@ -13,7 +13,12 @@ from .models import (
     PersonalMessage,
     Image,
     Ingredient,
+    DishRating,
+    RestaurantRating
 )
+
+
+
 
 # Register your models here.
 admin.site.register(Restaurant)
@@ -29,4 +34,6 @@ admin.site.register(ShoppingCart)
 admin.site.register(CartItem)
 admin.site.register(Payment)
 admin.site.register(PersonalMessage)
+admin.site.register(DishRating)
+admin.site.register(RestaurantRating)
 

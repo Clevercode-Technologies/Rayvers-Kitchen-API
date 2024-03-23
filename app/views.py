@@ -117,6 +117,69 @@ class CategoryViewDetails(APIView):
 
 
 
+# ------------------------------- Ingredient views -----------------------------------
+class IngredientViewList(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsUserVerified]
+    serializer_class = serializers.IngredientSerializer
+
+    def get(self, *args, **kwargs ):
+        """Returns a list of all INGREDIENTS"""
+        ingredients = models.Ingredient.objects.all().order_by("-pk")
+
+        paginator = CustomPageNumberPagination()
+
+        paginated_ingredient = paginator.paginate_queryset(ingredients, self.request)
+
+        serializer = self.serializer_class(paginated_ingredient, many=True)
+
+    
+        return Response({
+            'count': paginator.page.paginator.count,
+            'next': paginator.get_next_link(),
+            'previous': paginator.get_previous_link(),
+            'results': serializer.data
+        })
+    
+    def post(self, *args, **kwargs):
+        data = self.request.data
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+
+class IngredientDetailView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsUserVerified]
+    serializer_class = serializers.IngredientSerializer
+
+    def get(self, *args, **kwargs):
+        pk = kwargs["pk"]
+        try:
+            ingredient = models.Ingredient.objects.get(pk=pk)
+            serializer = serializers.IngredientSerializer(ingredient)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except models.Ingredient.DoesNotExist:
+            return Response({"details": "ingredient with id not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    def put(self, *args, **kwargs):
+        pk = kwargs["pk"]
+        ingredient = get_object_or_404(models.Ingredient, pk=pk)
+        serializer = self.serializer_class(ingredient, data=self.request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    def delete(self, *args, **kwargs ):
+        pk = kwargs["pk"]
+        try:
+            ingredient = models.Ingredient.objects.get(pk=pk)
+            ingredient.delete()
+            return Response({"details": "Ingredient has been deleted successfully "}, status=status.HTTP_204_NO_CONTENT)
+        except models.Ingredient.DoesNotExist:
+            return Response({"details": "Ingredient with id not found"}, status=status.HTTP_404_NOT_FOUND)
+
 
 # ------------------------------- Dish views -----------------------------------
 class DishesViewList(APIView):
@@ -151,6 +214,10 @@ class DishesViewList(APIView):
 
     def post(self, *args, **kwargs ):
         data = self.request.data
+
+        ingredients = data.get("ingredients")
+        # print("INGREDIENTS: ", ingredients)
+
         
         # Ensure only chef that added dishes can delete them
         requesting_user_chef_id = self.request.user.id
@@ -174,7 +241,15 @@ class DishesViewList(APIView):
             return Response({"details": "Only chefs can add dishes"}, status=status.HTTP_401_UNAUTHORIZED)
 
 
-class DishesViewDetails(APIView):
+
+
+
+
+
+
+
+
+class DishDetailView(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsUserVerified]
     serializer_class = serializers.DishSerializer
@@ -204,9 +279,144 @@ class DishesViewDetails(APIView):
             return Response({"details": "dish has been deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
         except models.Dish.DoesNotExist:
             return Response({"details": "dish with id not found"}, status=status.HTTP_404_NOT_FOUND)
-        
-     
 
+
+class DishDetailRatingView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsUserVerified]
+
+    def get(self, *args, **kwargs):
+        pk = kwargs["pk"]
+        try:
+            dish = models.Dish.objects.get(pk=pk)
+        except models.Dish.DoesNotExist:
+            return Response({
+                "message": "dish with id not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check if the cusumer rating is permitted to 
+        # be displayed in the app or approved by the admin
+
+        ratings = models.DishRating.objects.filter(dish=dish, approved=True)
+
+        serializer = serializers.DishRatingSerializer(ratings, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+
+    def post(self, *args, **kwargs):
+        # Get the dish id we are rating
+        pk = kwargs["pk"]
+        try:
+            dish = models.Dish.objects.get(pk=pk)
+        except models.Dish.DoesNotExist:
+            return Response({
+                "message": "dish with id not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # We get the two accepted data in our payload which are:
+        # - rating_number (rating_number must be from 1 - 5)
+        # - user (user will be derived from the request user object)
+
+        user = self.request.user
+        rating_number = self.request.data.get("rating_number")
+        rating_text = self.request.data.get("rating_text")
+
+        if not rating_number:
+            return Response({"message": "rating_number is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+        if not isinstance(rating_number, int):
+            return Response({"message": "rating_number must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if int(rating_number) > 5 or int(rating_number) < 1:
+            return Response({"message": "rating_number must be between 1 - 5"}, status=status.HTTP_400_BAD_REQUEST)
+
+        
+
+        # Check if the user and dish is already in the rating table
+        # If it is, don't create a new one instead 
+        # If not, create a new one in the database
+        try:
+            user_ratings_for_dish = models.DishRating.objects.get(user=user, dish=dish)
+            rating = user_ratings_for_dish
+            rating.number = rating_number
+            if rating_text:
+                rating.text = rating_text
+            rating.save()
+            return Response({"message": "User rating was successfully updated"}, status=status.HTTP_200_OK)
+        except models.DishRating.DoesNotExist:
+            dish_rating = models.DishRating.objects.create(user=user, dish=dish, number=rating_number)
+            if rating_text:
+                dish_rating.text = rating_text
+                dish_rating.save()
+            return Response({"message": "User rating was successfully added"}, status=status.HTTP_200_OK)
+
+class RestaurantDetailRating(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsUserVerified]
+
+    def get(self, *args, **kwargs):
+        pk = kwargs["pk"]
+        try:
+            restaurant = models.Restaurant.objects.get(pk=pk)
+        except models.Restaurant.DoesNotExist:
+            return Response({
+                "message": "restaurant with id not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check if the cusumer rating is permitted to 
+        # be displayed in the app or approved by the admin
+
+        ratings = models.RestaurantRating.objects.filter(restaurant=restaurant, approved=True)
+
+        serializer = serializers.RestaurantRatingSerializer(ratings, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, *args, **kwargs):
+        # Get the dish id we are rating
+        pk = kwargs["pk"]
+        try:
+            restaurant = models.Restaurant.objects.get(pk=pk)
+        except models.Restaurant.DoesNotExist:
+            return Response({"details": "restaurant with id not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        # We get the two accepted data in our payload which are:
+        # - rating_number (rating_number must be from 1 - 5)
+        # - user (user will be derived from the request user object)
+
+        user = self.request.user
+        rating_number = self.request.data.get("rating_number")
+        rating_text = self.request.data.get("rating_text")
+
+        if not isinstance(rating_number, int):
+            return Response({"message": "rating_number must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if int(rating_number) > 5 or int(rating_number) < 0:
+            return Response({"message": "rating_number must be between 1 - 5"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not rating_number:
+            return Response({"message": "rating_number is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            user_ratings_for_restaurant = models.RestaurantRating.objects.get(user=user, restaurant=restaurant)
+            rating = user_ratings_for_restaurant
+            rating.number = rating_number
+            if rating_text:
+                rating.text = rating_text
+            rating.save()
+            return Response({"message": "User rating was successfully updated"}, status=status.HTTP_200_OK)
+        except models.RestaurantRating.DoesNotExist:
+            user_ratings_for_restaurant = models.RestaurantRating.objects.create(user=user, restaurant=restaurant, number=rating_number)
+            if rating_text:
+                user_ratings_for_restaurant.text = rating_text
+                user_ratings_for_restaurant.save()
+            return Response({"message": "User rating was successfully added"}, status=status.HTTP_200_OK)
+
+        
 # ------------------------------- Restaurant views -----------------------------------
 class ResturantViewList(APIView):
     authentication_classes = [TokenAuthentication]
@@ -215,11 +425,12 @@ class ResturantViewList(APIView):
 
     def get(self, request):
         restaurants = models.Restaurant.objects.all().order_by("-pk")
+        print(restaurants)
         paginator = CustomPageNumberPagination()
 
         paginated_restaurants = paginator.paginate_queryset(restaurants, self.request)
 
-        
+         
 
         serializer = self.serializer_class(paginated_restaurants, many=True)
 
@@ -237,7 +448,8 @@ class ResturantViewList(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
+
+
 class RestaurantViewDetails(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsUserVerified]
@@ -287,7 +499,7 @@ class RestaurantViewDetails(APIView):
         except models.Dish.DoesNotExist:
             return Response({"details": "restaurant with id not found"}, status=status.HTTP_404_NOT_FOUND)
         
-    
+
 
 # ------------------------------- Driver views -----------------------------------
 class DriversViewList(APIView):

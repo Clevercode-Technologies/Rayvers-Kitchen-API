@@ -42,5 +42,3 @@ class HelpersTestCase(TestCase):
         self.assertFalse(result.status)
         self.assertEqual(result.message, "Invalid password")
         self.assertIn("This password is too short. It must contain at least 8 characters.", result.error_messages)
-
-    # Would more test cases as needed.
