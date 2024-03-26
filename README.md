@@ -439,6 +439,31 @@ with this endpoint: `/auth/users/me/`. Remember this enpoint is used to retrieve
 ### Endpoint /auth/restaurants/me/ GET
 
 No payload required for a GET request.
+The Response gotten from the GET request is:
+
+```json
+
+  {
+    "id": 1,
+    "name": "Reyvers Kitchen",
+    "description": "This is the Reyvers Kitchen.",
+    "ratings": 0,
+    "image": "/media/restaurant/image5-author.jpeg",
+    "image_url": "https://image.com/po.png",
+    "address": "Love address",
+    "balance": "5600.00",
+    "permissions": {
+        "is_superuser": true,
+        "is_driver": false,
+        "is_restaurant": true,
+        "is_customer": false
+    }
+}
+```
+
+
+
+
 ### Endpoint /auth/restaurants/me/ PUT
 Payload should look like this:
 ```json
@@ -464,6 +489,50 @@ The following response will be received if an error occured:
 Some other error responses will also occur if the user data do not meet the validation score.
 
 
+## How to Deduct The Restaurant Balance
+### Endpoint /auth/restaurants/me/deduct/ PUT
+In order to properly use this deduct endpoint, you must send an `amount` value from the following
+payload:
+
+```json
+  {
+    "amount": 2000
+  }
+```
+
+The value sent over `amount` must be an integer or number. If it's not, it will return an error.
+The value must not be greater than the restaurant amount. If it's not, it will return an error message.
+Only restaurants have access to this endpoint or route.
+
+If, on the other hand, the request was successful, the `amount` value sent will be deducted from the current amount of the restaurant with a success response.
+
+### Error Response
+
+```json
+{
+    "message": "amount is greater than current balance",
+    "current_balance": 0.0
+}
+{"message": "User was not found"}
+
+{"message": "User must be a chef. Permission denied."}
+
+{"message": "amount is required"}
+
+{"message": "amount must be an integer"}
+
+
+```
+
+### Successful Response
+```json
+{"message": "Balance has been updated successfully!", "current_balance": 3000.50}
+
+```
+
+
+
+
 ## Get and Update Driver Profile information
 To get driver info, you need to provide a valid token in the authorization header.
 And you must ensure that user is a driver/logistics. If it's not a driver you will receive a permission denied message.
@@ -478,6 +547,7 @@ No payload required for a GET request.
 Payload should look like this:
 ```json
 {
+  
   "vehicle_color": "Gold",
   "vehicle_description": "Vehicle Description",
   "vehicle_number": "GLU23HS",
@@ -485,14 +555,14 @@ Payload should look like this:
 }
 ```
 
-Do not add kitchen_id here. This endpoint is for changing kitchen details, not changing kitchen_id.
-To change kitchen_id, use the previous endpoint given: `/auth/users/change/username/`.
+Do not add `driver_id` here. This endpoint is for changing kitchen details, not changing kitchen_id.
+To change driver_id, use the previous endpoint given: `/auth/users/change/username/`.
 
 The following response will be received if an error occured:
 ```json
 {"message": "User was not found"}
 {"message": "User must be a chef. Permission denied."}
-{"message":"You are not allowed to update kitchen id via this route"}
+{"message":"You are not allowed to update driver id via this route"}
 ```
 
 Some other error responses will also occur if the user data do not meet the validation score.
@@ -504,7 +574,7 @@ For all endpoints, the client must make request with a valid token in the Author
 ## Restaurants
 ### /api/restaurants/ GET
 The above enpoint retrieves the list of restaurants and their information for all users to see.
-The only constraint here is that users are only able to access it with their token in the `Authorization` header. If no token is found in the Authorization request header, a  `Authentication credentials were not provided` response  will be raised or a `Invalid token` response if the token in the header is invalid. The JSON object returned from this request as response is as follow:
+The only constraint here is that users are only allowed to access it with their token in the `Authorization` header. If no token is found in the Authorization request header, a  `Authentication credentials were not provided` response  will be raised or a `Invalid token` response if the token in the header is invalid. The JSON object returned from this request as response is as follow:
 
 ```json
 
@@ -623,11 +693,58 @@ The response below will be given if the request was successful:
 
 
 
+## Ingredients
+
+### /api/ingredients/ GET, POST
+
+The ingredients endpoint retrieves all the ingredients in the database.
+The client should expect a response like when making a GET request:
+
+```json
+{
+    "count": 1,
+    "next": null,
+    "previous": null,
+    "results": [
+        {
+            "id": 1,
+            "image_url": "https://f.com/tomatoes.png",
+            "name": "tomatoes"
+        },
+        {
+            "id": 2,
+            "image_url": "https://f.com/garden_egg.png",
+            "name": "garden egg"
+        }
+    ]
+}
+
+```
+
+The `image_url` field is optional.
+
+### Error Response
+```json
+{
+    "name": [
+        "Ingredient with this name already exists."
+    ]
+}
+
+```
+
+
+
+### /api/ingredients/(id)/ GET, PUT, DELETE
+The above endpoint retrieves, update or delete a single instance of ingredient in the database.
+
+
+
 ## Dishes
 
 ### /api/dishes/ GET, POST
 
-The dishes endpoint retrieves all the dishes or food items in the database:
+The dishes endpoint retrieves all the dishes or food items in the database.
 
 The client should expect a response like when making a GET request:
 
@@ -659,6 +776,20 @@ The client should expect a response like when making a GET request:
                     "id": 3,
                     "file": "https://res.cloudinary.com/dqevhwn0e/image/upload/v1/media/category/Screen_Shot_2024-01-24_at_3.14.41_PM.png",
                     "label": ""
+                }
+            ],
+            "image_urls": [
+                {
+                    "id": 4,
+                    "url": "https://f.com/fgh.png"
+                },
+                {
+                    "id": 5,
+                    "url": "https://f.com/fgh.png"
+                },
+                {
+                    "id": 6,
+                    "url": "https://f.com/fgh.png"
                 }
             ],
             "category": 1
@@ -694,6 +825,20 @@ The client should expect a response like when making a GET request:
                     "label": "Image 2"
                 }
             ],
+            "image_urls": [
+                {
+                    "id": 4,
+                    "url": "https://f.com/fgh.png"
+                },
+                {
+                    "id": 5,
+                    "url": "https://f.com/fgh.png"
+                },
+                {
+                    "id": 6,
+                    "url": "https://f.com/fgh.png"
+                }
+            ],
             "category": 1
         },
         {
@@ -725,10 +870,22 @@ The client should expect a response like when making a GET request:
                     "label": "Image 2"
                 }
             ],
+            "image_urls": [
+                {
+                    "id": 4,
+                    "url": "https://f.com/fgh.png"
+                },
+                {
+                    "id": 5,
+                    "url": "https://f.com/fgh.png"
+                },
+                {
+                    "id": 6,
+                    "url": "https://f.com/fgh.png"
+                }
+            ]
             "category": 1
-        },
-        
-        ...
+        }
     ]
 }
 
@@ -739,7 +896,7 @@ For a POST request, you can decide to use a formData to send your request with t
 
 ```json
 {
-  "name":"Olaf hath hgh jhjhjksara loa",
+  "name":"Rice",
   "description":"This is the best food you have ever tasted",
   "price":4000,
   "restaurant":1,
@@ -748,11 +905,18 @@ For a POST request, you can decide to use a formData to send your request with t
   "time_duration":20,
   "images": "[ListOfImages base64]",
   "ingredients":[1,2,3,4],
-  "image_url": "This is a special image url"
+  "all_images": [
+    "https://f.com/fgh.png",
+    "https://f.com/fgh.png",
+    "https://f.com/fgh.png"
+  ]
 }
 
 ```
 The `images` field is best handled using formData. But you can use it in other ways based on your use case.
+
+You have an option to send an array of images in the `all_images` field.
+
 
 The `ingredients` field is a list or array of ids. Each id must be attributed to an ingredient instance, meaning you must first fetch the ingredients, retrieve their ids and make a request.
 
@@ -788,6 +952,23 @@ The expected response gotten will be as follows:
         "name": "english meals",
         "image": "https://res.cloudinary.com/dqevhwn0e/image/upload/v1/media/category/Screen_Shot_2024-01-24_at_3.14.41_PM.png"
     },
+    "image_urls": [
+        {
+            "id": 4,
+            "url": "https://f.com/fgh.png"
+        },
+        {
+            "id": 5,
+            "url": "https://f.com/fgh.png"
+        },
+        {
+            "id": 6,
+            "url": "https://f.com/fgh.png"
+        }
+    ],
+
+
+
     "images": [
         {
             "id": 3,
@@ -1131,7 +1312,6 @@ In order to change order items fields like `driver` assigned. You need to provid
 ```json
 
   {
-    "driver": 1,
     "status": "completed"
   }
 
@@ -1139,8 +1319,50 @@ In order to change order items fields like `driver` assigned. You need to provid
 
 The `status` must be one of the following options: -- `completed`, `pending` or `cancelled`. The client must send one of the following as the current status: `completed`, `pending` or `cancelled`.
 When an order is saved, the status of the each item in the items array is `pending`. The client can update it using the above endpoint.
-The `driver` field is the id of the assigned driver.
 
+### Assigning Drivers to orderitems via a PUT request.
+## /api/orderitems/drivers/assign/?option=add_driver PUT
+## Or
+## /api/orderitems/drivers/assign/?option=remove_driver PUT
+ In order to successfully assign a driver to an orderitem, the `id` of the item and driver must be sent to the backend in the following payload:
+
+```json
+{
+  "orderitem_id": 1,
+  "driver_id": 1
+}
+
+```
+The `option` parameter is required. It tells the backend service what it is you are trying to do.
+The `option` parameter should be one of two values: `add_driver` or `remove_driver`.
+To `add_driver` means you are trying to assign driver to a particular orderitem instance.
+To `remove_driver` means the opposite.
+
+The two parameters in the payload, `orderitem_id` and `driver_id` respectively, are the unique `id` of both the driver and the orderitem in question. 
+
+The `driver_id` field should be the id of the driver you wish to assign.
+The `orderitem_id` field, on the other hand, should be the id of the orderitem you wish to modify.
+
+To add driver, you should send the payload to `/api/orderitems/drivers/assign/?option=add_driver` with the above payload.
+To remove driver, you should send the payload to `/api/orderitems/drivers/assign/?option=remove_driver`
+
+
+### Expected Success Response:
+```json
+{"message": "Driver: jake@gmail.com assigned successfully to ordered item"}
+
+```
+
+### Expected Error Response:
+```json
+{"message": "driver_id field is required."}
+{"message": "option query parameter is required."}
+{"message": "User must be a restaurant"}
+{"message": "Order item does not exist"}
+{"message": "Driver with id: {driver_id} does not exist your restaurant"}
+{"message": "Select a valid option --- add_driver or remove_driver"}
+
+```
 
 
 # Rating dishes
@@ -1304,8 +1526,168 @@ The above response is an array of objects. Each object consists of each user's r
 
 
 
+<!-- Rating Driver -->
+
+# Rating drivers
+## Rate a particular driver
+## /api/drivers/(id)/ratings/ POST
+
+The required parameter to rate a driver is the `id` of the driver. 
+
+### Request payload
+```json
+
+  {
+  "rating_number": 2,
+  "rating_text": "This is my rating text"
+  }
+
+```
+While the `rating_number` payload field is required, the `rating_text` payload field is not a required field.
+
+The `rating_number` payload field is expected to be a number or an integer ranging from `1-5`.
+If the client does not send an integer, the following error will be
+raised:
+
+```json
+
+{
+  "message": "rating_number must be an integer"
+}
+
+```
+If the `rating_number` is not given, the following error response will be given:
+```json
+{
+  "message": "rating_number is required"
+}
+```
+If, similarly, a driver with the underlying `id` does not exist, an error will also be raised:
+
+```json
+{
+  "message": "driver with id not found"
+}
+```
+
+
+## Get the rating data for a particular driver
+## /api/drivers/(id)/ratings/ GET
+In order to retrieve all the rating data for a particular driver, the client should make a get request to the above endpoint. The rating data consists of the `number` of rating, `text` or recommendation of user, `user_data` which is the author's details and `driver` information.
+
+### Response:
+```json
+  [
+    {
+        "number": 4,
+        "text": "This is my text update forever with love for driver",
+        "user_data": {
+            "display_image": "",
+            "email": "jacobcode@gmail.com",
+            "username": "51M07fbk",
+            "role": "logistics"
+        },
+        "driver": {
+            "user": 3,
+            "name": "Daniel Osifo", 
+            "vehicle_image_url": null,
+            "vehicle_color": "red",
+            "vehicle_description": "Lovely car",
+            "vehicle_number": "ZOISJ342",
+            "available": false,
+            "profile_details": {
+                "name": "Daniel Osifo", 
+                "image_url": "https://somesite.com/image.png",
+                "date_of_birth": "2020-02-02",
+                "phone_number": "+234892993839",
+                "bio": "This is a fantastic bio"
+            }
+        }
+    },
+    {
+        "number": 4,
+        "text": "This is my text update forever with love for driver from someone else",
+        "user_data": {
+            "display_image": "",
+            "email": "admin@gmail.com",
+            "username": "aMuuNZLh",
+            "role": "chef"
+        },
+        "driver": {
+            "user": 3,
+            "driver_id": "51M07fbk",
+            "vehicle_image_url": null,
+            "vehicle_color": "red",
+            "vehicle_description": "Lovely car",
+            "vehicle_number": "ZOISJ342",
+            "available": false,
+            "profile_details": {
+                "name": "Daniel Osifo", 
+                "image_url": "https://somesite.com/image.png",
+                "date_of_birth": "2020-02-02",
+                "phone_number": "+234892993839",
+                "bio": "This is a fantastic bio"
+            }
+        }
+    }
+  ]
+```
+The above response is an array of objects. Each object consists of each user's review.
 
 
 
+# Get the Analytics data for a particular Driver or Restaurant
+
+## Restaurant
+## /auth/restaurants/analytics/ GET
+
+In order to get the analytics data for restaurant, the user making the request must be a restaurant as indicated in the Authentication Header Token. If the user is not a restaurant or chef, an error would be raised. This is because the auth header is used to identify the user.
+
+If the restaurant passes the test of authentication, a response is given as thus:
+
+```json
+{
+    "message": "Here's your analytics",
+    "analytics": {
+        "completed_orders_count": 0,
+        "pending_orders_count": 2,
+        "cancelled_orders_count": 0,
+        "total_orders": 2,
+        "reviews": {
+            "restaurant_ratings": 4.0,
+            "reviews_count": 1
+        },
+        "num_available_drivers": 1,
+        "total_revenue": 5000.0
+    }
+}
+
+```
+
+
+
+## Driver
+## /auth/drivers/analytics/ GET
+
+In order to get the analytics data for driver, the user making the request must be a driver as indicated in the Authentication Header Token. If the user is not a driver or chef, an error would be raised. This is because the auth header is used to identify the user.
+
+If the driver passes the test of authentication, a response is given as thus:
+
+```json
+{
+    "message": "Here's your analytics",
+    "analytics": {
+        "completed_orders_count": 0,
+        "pending_orders_count": 1,
+        "cancelled_orders_count": 0,
+        "total_orders": 1,
+        "reviews": {
+            "driver_ratings": 4.0,
+            "reviews_count": 2
+        }
+    }
+}
+
+```
 
 

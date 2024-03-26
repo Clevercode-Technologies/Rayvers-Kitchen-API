@@ -70,6 +70,8 @@ class OrderViewSet(viewsets.ModelViewSet):
         for item in items_data:
             dish_id = item.get("dish_id")
             restaurant_id = item.get("restaurant_id")
+            amount = item.get("amount")
+            quantity = item.get("quantity")
             try:
                 dish = Dish.objects.get(id=item.pop('dish_id'))
             except Dish.DoesNotExist:
@@ -80,6 +82,20 @@ class OrderViewSet(viewsets.ModelViewSet):
                 return Response({"message": f"Restaurant with id: {restaurant_id} does not exists"}, status=status.HTTP_400_BAD_REQUEST)
             
             OrderItem.objects.create(order=order, dish=dish, restaurant=restaurant, **item)
+            
+            print("Dish Restaurant: ", dish.restaurant)
+            print("Real Restaurant: ", restaurant)
+            # Here, we retrieve and update the restaurant balance
+            try:
+                restaurant_to_update_balance = Restaurant.objects.get(id=restaurant_id)
+                balance_to_update_for_restaurant = int(amount) * int(quantity)
+                restaurant_to_update_balance.balance = balance_to_update_for_restaurant
+                restaurant_to_update_balance.save()
+                print("The total balance part worked! ")
+            except Restaurant.DoesNotExist:
+                return Response({"message":f"Restaurant with id: {restaurant_id} does not exists"}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                return Response({"message":f"Something else happened here: {e}"}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = self.get_serializer(order)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -145,7 +161,21 @@ class OrderCustomerListView(APIView):
                 **item
             )
 
-        
+            # Check if the dish belongs to the restaurant
+            if dish.restaurant != restaurant:
+                return Response({"message": f"The dish id: {dish_id} and the resturant_id: {restaurant_id} does not correllate. In other words, it is not the restaurant that has the selected dish."})
+            
+            # Here, we retrieve and update the restaurant balance
+            try:
+                restaurant_to_update_balance = Restaurant.objects.get(id=restaurant_id)
+                balance_to_update_for_restaurant = int(amount) * int(quantity)
+                restaurant_to_update_balance.balance += balance_to_update_for_restaurant
+                restaurant_to_update_balance.save()
+                print("The total balance part worked! ")
+            except Restaurant.DoesNotExist:
+                return Response({"message":f"Restaurant with id: {restaurant_id} does not exists"}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                return Response({"message":f"Something else happened here: {e}"}, status=status.HTTP_400_BAD_REQUEST)
         
         # Create Payment instance
         Payment.objects.create(
@@ -159,7 +189,8 @@ class OrderCustomerListView(APIView):
         serializer = self.serializer_class(order)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
-    
+
+
 
 class OrderItemsListForAllUsers(APIView):
     serializer_class = OrderItemSerializer
@@ -324,17 +355,17 @@ def assign_driver_to_orderitem(request):
         orderitem = OrderItem.objects.get(pk=orderitem_id)
         restaurant_driver = reataurant.driver_set.get(id=driver_id)
     except Restaurant.DoesNotExist:
-        return Response({"message": "Restaurant does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"message": "User must be a restaurant"}, status=status.HTTP_404_NOT_FOUND)
     except OrderItem.DoesNotExist:
         return Response({"message": "Order item does not exist"}, status=status.HTTP_404_NOT_FOUND)
     except Driver.DoesNotExist:
-        return Response({"message": f"Driver with id: {driver_id} does not exist in the restaurant driver"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"message": f"Driver with id: {driver_id} does not exist your restaurant"}, status=status.HTTP_404_NOT_FOUND)
     
-    # Check user input -- option 
+    # Check user input -- option
     if option == "add_driver":
         orderitem.driver = restaurant_driver
         orderitem.save()
-        return Response({"message": f"Driver: {restaurant_driver.user.email} assigned successfully to the ordered item"}, status=status.HTTP_200_OK)
+        return Response({"message": f"Driver: {restaurant_driver.user.email} assigned successfully to ordered item"}, status=status.HTTP_200_OK)
     elif option == "remove_driver":
         orderitem.driver = None
         orderitem.save()

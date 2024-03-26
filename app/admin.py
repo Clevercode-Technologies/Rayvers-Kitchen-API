@@ -14,7 +14,9 @@ from .models import (
     Image,
     Ingredient,
     DishRating,
-    RestaurantRating
+    RestaurantRating,
+    DriverRating,
+    ImageURL
 )
 
 
@@ -22,6 +24,7 @@ from .models import (
 
 # Register your models here.
 admin.site.register(Restaurant)
+admin.site.register(ImageURL)
 admin.site.register(Category)
 admin.site.register(Dish)
 admin.site.register(Ingredient)
@@ -36,4 +39,5 @@ admin.site.register(Payment)
 admin.site.register(PersonalMessage)
 admin.site.register(DishRating)
 admin.site.register(RestaurantRating)
+admin.site.register(DriverRating)
 

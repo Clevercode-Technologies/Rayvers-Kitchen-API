@@ -230,7 +230,9 @@ def get_restaurant_profile(request):
             "description": serializer.data.get("description"),
             "ratings": serializer.data.get("ratings"),
             "image": serializer.data.get("image"),
+            "image_url": restaurant_profile.image_url,
             "address": serializer.data.get("address"),
+            "balance": serializer.data.get("balance"),
             "permissions": {
                 "is_superuser": user.is_superuser,
                 "is_driver": user.role == "logistics",
@@ -253,6 +255,66 @@ def get_restaurant_profile(request):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     return Response({"message": "Http method not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+
+
+@api_view(['PUT'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated, IsUserVerified])
+def update_restaurant_balance(request):
+
+    data = request.data
+
+    user = request.user
+
+    # Check if user is a restaurant
+    try:
+        user = User.objects.get(id=user.id)
+    except User.DoesNotExist:
+        return Response({"message": "User was not found"}, status=status.HTTP_404_NOT_FOUND)
+    # User must be a chef
+    if user.role != "chef":
+        return Response({"message": "User must be a chef. Permission denied."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    restaurant_profile = Restaurant.objects.filter(user=user).first()
+
+    amount = data.get("amount")
+
+    # Check if amount was given
+    if not amount:
+        return Response({"message": "amount is required"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Check if amount is an integer
+    if not isinstance(amount, int):
+        return Response({"message": "amount must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+    old_balance = restaurant_profile.balance
+    new_balance = old_balance - amount
+
+
+    if new_balance >= 0:
+        restaurant_profile.balance = new_balance
+        restaurant_profile.save()
+        return Response({"message": "Balance has been updated successfully!", "current_balance": restaurant_profile.balance}, status=status.HTTP_200_OK)
+    else:
+        return Response({"message": "amount is greater than current balance", "current_balance": restaurant_profile.balance}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
 
 
 # DRIVER PROFILE
@@ -284,6 +346,7 @@ def get_driver_profile(request):
             "vehicle_description": serializer.data.get("vehicle_description"),
             "vehicle_number": serializer.data.get("vehicle_number"),
             "available": serializer.data.get("available"),
+            "profile_details": serializer.data.get("profile_details"),
             "permissions": {
                 "is_superuser": user.is_superuser,
                 "is_driver": user.role == "logistics",
@@ -492,12 +555,30 @@ def driver_analytics(request):
         driver = Driver.objects.get(user=request.user)
         ordereditems = OrderItem.objects.filter(driver=driver)
 
+        # Get the pending runs and the successful runs
+        orderitems_completed = ordereditems.filter(status="completed")
+        orderitems_pending = ordereditems.filter(status="pending")
+        orderitems_cancelled = ordereditems.filter(status="cancelled")
+
+        reviews = driver.driver_rated.all()
+
         print("driver: ", driver)
         print("orderitems by driver: ", ordereditems)
     except Restaurant.DoesNotExist:
         return Response({"message": "Driver does not exist"}, status=status.HTTP_404_NOT_FOUND)
+    
+    analytics = {
+            "completed_orders_count": orderitems_completed.count(),
+            "pending_orders_count": orderitems_pending.count(),
+            "cancelled_orders_count": orderitems_cancelled.count(),
+            "total_orders": ordereditems.count(),
+            "reviews": {
+                "driver_ratings": driver.ratings,
+                "reviews_count": reviews.count(),
+            },
+    }
 
-    return Response({"message": "Here's your analytics"}, status=status.HTTP_200_OK)
+    return Response({"message": "Here's your analytics", "analytics": analytics}, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
@@ -520,11 +601,6 @@ def restaurant_analytics(request):
 
         reviews = restaurant.restaurant_rated.all()
 
-        reviews_serializer = RestaurantRatingSerializer(reviews, many=True).data
-
-       
-
-
 
         analytics = {
             "completed_orders_count": completed_orders_count,
@@ -536,16 +612,8 @@ def restaurant_analytics(request):
                 "reviews_count": reviews.count(),
             },
             "num_available_drivers": restaurant.driver_set.all().count(),
-            "total_revenue": ""
+            "total_revenue": restaurant.balance
         }
-
-        print("reviews: ", reviews)
-
-
-        print("analytics", analytics)
-        print("restaurant", restaurant)
-        print("orderitems by restaurant: ", ordereditems)
-
 
     except Restaurant.DoesNotExist:
         return Response({"message": "Restaurant does not exist"}, status=status.HTTP_404_NOT_FOUND)
