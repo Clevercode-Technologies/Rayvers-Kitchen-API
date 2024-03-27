@@ -62,7 +62,6 @@ class UserProfile(models.Model):
     name = models.CharField(max_length=30, blank=True, null=True)
     date_of_birth = models.DateField(null=True, blank=True)
     image_url = models.CharField(max_length=1000, blank=True, null=False)
-    # profile_picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
     phone_number = models.CharField(max_length=30, blank=True, null=True)
     bio = models.TextField(blank=True, null=True)
 

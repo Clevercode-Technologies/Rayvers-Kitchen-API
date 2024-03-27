@@ -1,4 +1,7 @@
 from django.shortcuts import render, get_object_or_404
+from django.contrib.auth import get_user_model
+
+
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 
 from rest_framework.authentication import TokenAuthentication
@@ -20,6 +23,9 @@ from rest_framework.pagination import PageNumberPagination
 
 from . import serializers
 from .import models
+
+
+UserModel = get_user_model()
 
 # Create your views here.
 
@@ -86,13 +92,13 @@ class CategoryViewDetails(APIView):
         # Get all the dishes under this category
         dishes = models.Dish.objects.filter(category__id=pk).order_by("-pk")
 
-        # Serialize the paginated dishes
+        # Serialize the dishes
         dishes_serializer = serializers.DishSerializer(dishes, many=True)
 
         context = {
             "id": serializer.data.get("id"),
             "name": serializer.data.get("name"),
-            "image": serializer.data.get("image"),
+            "image_url": serializer.data.get("image_url"),
             "dishes": dishes_serializer.data,
         }
 
@@ -108,6 +114,7 @@ class CategoryViewDetails(APIView):
     
     def delete(self, *args, **kwargs ):
         pk = kwargs["pk"]
+        print("The category details view was called")
         try:
             category = models.Category.objects.get(pk=pk)
             category.delete()
@@ -459,7 +466,6 @@ class RestaurantViewDetails(APIView):
         pk = kwargs["pk"]
 
         # Get all the dishes under this category
-        # dishes = models.Dish.objects.filter(restaurant__id=).order_by("-pk")
         try:
             restaurant = models.Restaurant.objects.get(pk=pk)
             # Get all the dishes under this category
@@ -508,26 +514,43 @@ class DriversViewList(APIView):
     serializer_class = serializers.DriverSerializer
 
     def get(self, request):
-        drivers = models.Driver.objects.all().order_by("-pk")
-        paginator = CustomPageNumberPagination()
 
-        paginated_drivers = paginator.paginate_queryset(drivers, self.request)
+        user = request.user
 
-        serializer = self.serializer_class(paginated_drivers, many=True)
+        if user.role == "chef":
+            restaurant = models.Restaurant.objects.get(user=request.user)
+
+            drivers = restaurant.driver_set.all().order_by("-pk")
+            paginator = CustomPageNumberPagination()
+
+            paginated_drivers = paginator.paginate_queryset(drivers, self.request)
+
+            serializer = self.serializer_class(paginated_drivers, many=True)
+
+
+            return Response({
+                'count': paginator.page.paginator.count,
+                'next': paginator.get_next_link(),
+                'previous': paginator.get_previous_link(),
+                'results': serializer.data,
+            })
         
-        return Response({
-            'count': paginator.page.paginator.count,
-            'next': paginator.get_next_link(),
-            'previous': paginator.get_previous_link(),
-            'results': serializer.data,
-        })
+        else:
 
-    def post(self, request):
-        data = self.request.data
-        serializer = self.serializer_class(data=data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+            drivers = models.Driver.objects.all().order_by("-pk")
+            paginator = CustomPageNumberPagination()
+
+            paginated_drivers = paginator.paginate_queryset(drivers, self.request)
+
+            serializer = self.serializer_class(paginated_drivers, many=True)
+            
+            return Response({
+                'count': paginator.page.paginator.count,
+                'next': paginator.get_next_link(),
+                'previous': paginator.get_previous_link(),
+                'results': serializer.data,
+            })
+
     
 class DriverViewDetails(APIView):
     authentication_classes = [TokenAuthentication]
@@ -543,21 +566,71 @@ class DriverViewDetails(APIView):
         except models.Driver.DoesNotExist:
             return Response({"details": "driver with id not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    def put(self, request, *args, **kwargs):
-        data = self.request.data
-        serializer = self.serializer_class(data=data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def delete(self, request, *args, **kwargs):
+
+class DriverDetailRating(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsUserVerified]
+
+    def get(self, *args, **kwargs):
         pk = kwargs["pk"]
         try:
             driver = models.Driver.objects.get(pk=pk)
-            driver.delete()
-            return Response({"details": "driver has been deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
-        except models.Dish.DoesNotExist:
-            return Response({"details": "driver with id not found"}, status=status.HTTP_404_NOT_FOUND)
+        except models.Driver.DoesNotExist:
+            return Response({
+                "message": "driver with id not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check if the cusumer rating is permitted to 
+        # be displayed in the app or approved by the admin
+
+        ratings = models.DriverRating.objects.filter(driver=driver, approved=True)
+
+        serializer = serializers.DriverRatingSerializer(ratings, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, *args, **kwargs):
+        # Get the dish id we are rating
+        pk = kwargs["pk"]
+        try:
+            driver = models.Driver.objects.get(pk=pk)
+        except models.Driver.DoesNotExist:
+            return Response({"details": "Driver with id not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        # We get the two accepted data in our payload which are:
+        # - rating_number (rating_number must be from 1 - 5)
+        # - user (user will be derived from the request user object)
+
+        user = self.request.user
+        rating_number = self.request.data.get("rating_number")
+        rating_text = self.request.data.get("rating_text")
+
+        if not isinstance(rating_number, int):
+            return Response({"message": "rating_number must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if int(rating_number) > 5 or int(rating_number) < 0:
+            return Response({"message": "rating_number must be between 1 - 5"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not rating_number:
+            return Response({"message": "rating_number is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            user_ratings_for_driver = models.DriverRating.objects.get(user=user, driver=driver)
+            rating = user_ratings_for_driver
+            rating.number = rating_number
+            if rating_text:
+                rating.text = rating_text
+            rating.save()
+            return Response({"message": "User rating was successfully updated"}, status=status.HTTP_200_OK)
+        except models.DriverRating.DoesNotExist:
+            user_ratings_for_driver = models.DriverRating.objects.create(user=user, driver=driver, number=rating_number)
+            if rating_text:
+                user_ratings_for_driver.text = rating_text
+                user_ratings_for_driver.save()
+            return Response({"message": "User rating was successfully added"}, status=status.HTTP_200_OK)
+
+
 
 # ------------------------------- Order views -----------------------------------
 

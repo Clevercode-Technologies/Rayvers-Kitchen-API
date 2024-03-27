@@ -7,19 +7,42 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+
+class UserSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "username",
+            "email",
+            "is_staff",
+            "is_active",
+            "last_login",
+            "is_superuser",
+            "role",
+        ]
+
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Category
-        fields = ['id', 'name', 'image']
+        fields = ['id', 'name', 'image_url']
 
 class ImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Image
         fields = ['id', 'file', 'label']
 
+
+class ImageURLSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.ImageURL
+        fields = ['id', 'url']
+
 class DishSerializer(serializers.ModelSerializer):
     # Assuming you want to read the images
     images = ImageSerializer(many=True, read_only=True)  
+    image_urls = ImageURLSerializer(many=True, read_only=True)
     
     class Meta:
         model = models.Dish
@@ -38,7 +61,7 @@ class DishSerializer(serializers.ModelSerializer):
             'get_category', 
             'images', 
             'category',
-            'image_url',
+            'image_urls',
         ]
 
     def create(self, validated_data):
@@ -47,6 +70,7 @@ class DishSerializer(serializers.ModelSerializer):
         
         ingredients = self.context['request'].data.get('ingredients', [])
         images_data = self.context['request'].data.get('images', [])
+        image_urls = self.context['request'].data.get('all_images', [])
 
         
 
@@ -85,17 +109,28 @@ class DishSerializer(serializers.ModelSerializer):
         except:
             pass
 
+        try:
+            for image_url in image_urls:
+                image_url_instance = models.ImageURL.objects.create(url=image_url)
+                dish.image_urls.add(image_url_instance)
+        except:
+            pass
+
+
+
         return dish
 
 
 class DishSerializerForRating(serializers.ModelSerializer):
     images = ImageSerializer(many=True, read_only=True) 
+    image_urls = ImageURLSerializer(many=True, read_only=True)
     class Meta:
         model = models.Dish
         fields = [
             'id', 
             'name',
-            "images"
+            "images",
+            "image_urls"
         ]
 
 class DishRatingSerializer(serializers.ModelSerializer):
@@ -122,7 +157,8 @@ class RestaurantSerializer(serializers.ModelSerializer):
             'image',
             'address',
             "_dishes",
-            "image_url"
+            "image_url",
+            "balance",
         ]
 
 
@@ -139,6 +175,8 @@ class RestaurantSerializerForRating(serializers.ModelSerializer):
         ]
 
 
+
+
 class RestaurantRatingSerializer(serializers.ModelSerializer):
     restaurant = RestaurantSerializerForRating(read_only=True)
     class Meta:
@@ -151,11 +189,51 @@ class RestaurantRatingSerializer(serializers.ModelSerializer):
         ]
 
 
+class DriverUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            "email",
+            "username",
+        ]
+
+
+class DriverSerializerForRating(serializers.ModelSerializer):
+    # user = DriverUserSerializer(read_only=True)
+    class Meta:
+        model = models.Driver
+        fields = [
+            "user",
+            "driver_id",
+            "vehicle_image_url",
+            "vehicle_color",
+            "vehicle_description",
+            "vehicle_number",
+            "available",
+            "profile_details",
+            "ratings"
+        ]
+
+
+class DriverRatingSerializer(serializers.ModelSerializer):
+    driver = DriverSerializerForRating(read_only=True)
+    class Meta:
+        model = models.RestaurantRating
+        fields = [
+            "number",
+            "text",
+            "user_data",
+            "driver",
+        ]
+
+
 class DriverSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
     class Meta:
         model = models.Driver
         fields = [
             'id',
+            'user',
             'driver_id',
             'vehicle_image',
             'restaurant',
@@ -163,9 +241,14 @@ class DriverSerializer(serializers.ModelSerializer):
             'vehicle_description',
             'vehicle_number',
             'available',
+            'profile_details',
+            "ratings",
             'current_location_latitude',
             'current_location_longitude',
         ]
+
+
+
     
 # A serializer for ordered dishes
 class OrderedDishSerializer(serializers.ModelSerializer):
@@ -175,20 +258,6 @@ class OrderedDishSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'time_duration', 'description', 'price', 'restaurant', 'ratings','restaurant_details', 'get_category', 'images']
 
 
-class UserSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = User
-        fields = [
-            "id",
-            "username",
-            "email",
-            "is_staff",
-            "is_active",
-            "last_login",
-            "is_superuser",
-            "role",
-        ]
 
 
 class OrderItemSerializer(serializers.ModelSerializer):

@@ -24,7 +24,7 @@ def generate_random_username(length, max_attempts=100):
 
 class Category(models.Model):
     name = models.CharField(max_length=255, unique=True, blank=False, null=False)
-    image = models.ImageField(verbose_name="category image", upload_to="category/", blank=False, null=False)
+    image_url = models.CharField(max_length=2000, unique=True, blank=True, null=True)
     
     def __str__(self):
         return self.name
@@ -38,15 +38,14 @@ class Restaurant(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
     address = models.TextField(blank=True)
+    balance = models.DecimalField(default=0.0, max_digits=100, decimal_places=2)
     
     # Other fields as needed will be here...
-
-    # _ratings = models.ManyToManyField(RestaurantRating, related_name="restaurant_ratings")
 
     @property
     def ratings(self):
         all_ratings = self.restaurant_rated.all()
-        min_ratings_required = 2  # Minimum number of ratings required
+        min_ratings_required = 1  # Minimum number of ratings required
         
         if len(all_ratings) >= min_ratings_required:
             total_ratings = sum(rating.number for rating in all_ratings)
@@ -109,6 +108,7 @@ class RestaurantRating(models.Model):
         verbose_name_plural = "Restaurant Ratings"
         verbose_name = "Restaurant Rating"
 
+
 # Listens for chef that was created
 @receiver(post_save, sender=User)
 def create_restaurant(sender, instance=None, created=False, **kwargs):
@@ -141,6 +141,17 @@ class Image(models.Model):
         verbose_name = "Image"
     
 
+class ImageURL(models.Model):
+    url = models.CharField(max_length=1000, blank=True, null=True)
+    
+
+    def __str__(self):
+        return self.url
+    
+    class Meta:
+        verbose_name_plural = "Images URLs"
+        verbose_name = "Image URL"
+
 class Ingredient(models.Model):
     image_url = models.CharField(max_length=2000, blank=True, null=True)
     name = models.CharField(max_length=255, unique=True)
@@ -158,7 +169,7 @@ class Dish(models.Model):
         ("free", "free"),
         ("paid", "paid")
     ]
-    image_url = models.CharField(max_length=2000, blank=True, null=True)
+    image_urls = models.ManyToManyField(ImageURL, related_name="image_urls", blank=True)
     name = models.CharField(max_length=255, unique=True)
     images = models.ManyToManyField(Image, related_name='dish_images')
     description = models.TextField(blank=False, null=False)
@@ -200,6 +211,12 @@ class Dish(models.Model):
     def get_images(self):
         images = self.images.all()
         new_list = list(map(lambda x: {"label": x.label, "url":x.file.url}, images))
+        return new_list
+    
+    @property
+    def get_all_image_urls_added_from_frontend(self):
+        images = self.image_urls.all()
+        new_list = list(map(lambda x: {"url": x.url}, images))
         return new_list
     
     @property
@@ -293,16 +310,43 @@ class OrderItem(models.Model):
         verbose_name = "Order Item"
 
 class Driver(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
     driver_id = models.CharField(_("Driver id"), max_length=20, blank=True, null=False)
+    name = models.CharField(_("Driver Name"), max_length=100, blank=True, null=False)
+
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, blank=True, null=True)
     vehicle_image = models.ImageField(verbose_name="vehicle image", upload_to="driver/", blank=False, null=True)
+    vehicle_image_url = models.CharField(max_length=2000, blank=True, null=True)
     vehicle_color = models.CharField(max_length=40, blank=True, null=True)
     vehicle_description = models.TextField(blank=True, null=False)
     vehicle_number = models.CharField(max_length=40, blank=True, null=False)
     available = models.BooleanField(default=False)
     current_location_latitude = models.DecimalField(max_digits=10, decimal_places=10, null=True, blank=True)
     current_location_longitude = models.DecimalField(max_digits=10, decimal_places=10, null=True, blank=True)
+
+    @property
+    def ratings(self):
+        all_ratings = self.driver_rated.all()
+        min_ratings_required = 1  # Minimum number of ratings required
+        
+        if len(all_ratings) >= min_ratings_required:
+            total_ratings = sum(rating.number for rating in all_ratings)
+            average_rating = total_ratings / len(all_ratings)
+            return round(average_rating, 1)
+        return 0
+    
+    @property
+    def profile_details(self):
+        profile = self.user.profile
+        profile_deails = {
+            "name": profile.name,
+            "image_url": profile.image_url,
+            "date_of_birth": profile.date_of_birth,
+            "phone_number": profile.phone_number,
+            "bio": profile.bio
+        }
+        return profile_deails
+    
 
     def __str__(self):
         return f"Driver: {self.user.email}"
@@ -344,6 +388,35 @@ class DeliveryStatus(models.Model):
         verbose_name_plural = "Delivery Statuses"
         verbose_name = "Delivery Status"
 
+
+class DriverRating(models.Model):
+    number = models.IntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(5)],
+        default=0
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="driver_ratings")
+    driver = models.ForeignKey(Driver, on_delete=models.CASCADE, related_name="driver_rated")
+    text = models.TextField(blank=True)
+    approved = models.BooleanField(default=False)
+
+    @property
+    def user_data(self):
+        user = self.user
+        profile = UserProfile.objects.get(user=user)
+        user_details = {
+            "display_image": profile.image_url,
+            "name": profile.name,
+            "email": user.email,
+            "username": user.username,
+            "role": user.role
+        }
+        return user_details
+
+    def __str__(self) -> str:
+        return str(self.user.email) + ' -- ' + str(self.number) + " -- " + str(self.driver.name)
+    class Meta:
+        verbose_name_plural = "Driver Ratings"
+        verbose_name = "Driver Rating"
 
 class ShoppingCart(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)

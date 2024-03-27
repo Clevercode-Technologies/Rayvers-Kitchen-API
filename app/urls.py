@@ -31,6 +31,7 @@ urlpatterns = [
 
     path("drivers/", primary_views.DriversViewList.as_view(), name="driver_list"),
     path("drivers/<int:pk>/", primary_views.DriverViewDetails.as_view(), name="driver_detail"),
+    path("drivers/<int:pk>/ratings/", primary_views.DriverDetailRating.as_view(), name="driver_ratings"),
 
     path('payment/intent/', secondary_views.payment_intent_stripe, name="payment_intent_stripe"),
 
@@ -41,11 +42,8 @@ urlpatterns = [
     path('orderitems/<int:pk>/', secondary_views.OrderItemsDetailsForAllUsers.as_view(), name="orderitems_details"),
     path('orderitems/drivers/assign/', secondary_views.assign_driver_to_orderitem, name="assign_driver_to_orderitems"),
     
-    
-    
     path('ingredients/', primary_views.IngredientViewList.as_view(), name="ingredient_view_list"),
     path('ingredients/<int:pk>/', primary_views.IngredientDetailView.as_view(), name="ingredient_view_detail"),
-
 
 ] 
 

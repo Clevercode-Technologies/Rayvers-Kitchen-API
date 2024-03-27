@@ -34,9 +34,10 @@ urlpatterns = [
     path("drivers/analytics/", secondary_views.driver_analytics, name="driver_analytics"),
 
     # Restaurant
-    path('restaurants/me/', secondary_views.get_restaurant_profile, name="driver_profile"),
-    path("restaurants/token/", secondary_views.login_restaurant, name="login_driver"),
-    path("restaurants/", secondary_views.create_restaurant, name="create_driver"),
+    path('restaurants/me/', secondary_views.get_restaurant_profile, name="restaurant_profile"),
+    path('restaurants/me/deduct/', secondary_views.update_restaurant_balance, name="update_restaurant_profile_balance"),
+    path("restaurants/token/", secondary_views.login_restaurant, name="login_restaurant"),
+    path("restaurants/", secondary_views.create_restaurant, name="create_restaurant"),
     path("restaurants/analytics/", secondary_views.restaurant_analytics, name="restaurant_analytics"),
 ]
 
