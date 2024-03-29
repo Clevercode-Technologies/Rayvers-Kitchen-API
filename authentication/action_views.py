@@ -622,6 +622,34 @@ def restaurant_analytics(request):
 
 
 
+# Restaurant Withdrawal view
+
+@api_view(['GET', 'POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def retaurant_withdrawal_list_view(request):
+    if request.user.role != "chef":
+        return Response({"messge": "User must be a restaurant or chef"}, status=status.HTTP_401_UNAUTHORIZED)
+    
+    # Check if the user has a restaurant object
+    try:
+        restaurant = Restaurant.objects.get(user=request.user)
+    except Restaurant.DoesNotExist:
+        return Response({"message": "Restaurant does not exists."})
+    
+
+    
+    
+    return Response({"message": "Restaurant withdrawal view is working"})
+
+
+@api_view(['GET', 'PUT', 'DELETE'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def retaurant_withdrawal_detail_view(request, pk):
+    if request.user.role != "chef":
+        return Response({"messge": "User must be a restaurant or chef"}, status=status.HTTP_401_UNAUTHORIZED)
+    return Response({"message": "Restaurant withdrawal detail view is working"})
 
 
 

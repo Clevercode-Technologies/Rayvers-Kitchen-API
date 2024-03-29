@@ -235,6 +235,30 @@ class Dish(models.Model):
         verbose_name = "Dish"
 
 
+class RestaurantWithdrawal(models.Model):
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name="restaurant_withdrawal")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="restaurant_user_withdrawal")
+    account_bank = models.CharField(max_length=200, blank=True, null=False)
+    amount = models.IntegerField()
+    currency = models.CharField(max_length=3, blank=True, null=False)
+    narration = models.TextField(blank=True, null=False)
+    reference = models.CharField(max_length=200, blank=True, null=False)
+
+    def __str__(self) -> str:
+        return self.user.email + " __ " + self.restaurant.name
+    
+    @property
+    def get_payment_info(self):
+        details = {
+            "restaurant_name": self.restaurant.name,
+            "user_email": self.user.email,
+            "account_bank": self.account_bank,
+            "amount": self.amount,
+            "currency_code": self.currency,
+            "narration": self.narration,
+            "reference": self.reference
+        }
+        return details
 
 
 
