@@ -5,7 +5,7 @@ from rest_framework import status
 from django.contrib.auth import get_user_model
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from app.permissions import IsRestaurantUser, IsUserDriver
-from app.models import Driver, Restaurant, OrderItem, Order
+from app.models import Driver, Restaurant, OrderItem, Order, RestaurantWithdrawal
 from authentication.models import UserProfile
 from app.permissions import (
     IsUserVerified
@@ -15,7 +15,14 @@ from . import serializers
 from app.serializers import (
     RestaurantSerializer,
     DriverSerializer,
-    RestaurantRatingSerializer
+    RestaurantRatingSerializer,
+    
+)
+
+
+
+from .serializers import (
+    RestaurantWithdrawalSerializer
 )
 
 from .helpers import check_email, is_valid_password
@@ -628,28 +635,72 @@ def restaurant_analytics(request):
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def retaurant_withdrawal_list_view(request):
-    if request.user.role != "chef":
+
+    user = request.user
+    if user.role != "chef":
         return Response({"messge": "User must be a restaurant or chef"}, status=status.HTTP_401_UNAUTHORIZED)
     
     # Check if the user has a restaurant object
     try:
-        restaurant = Restaurant.objects.get(user=request.user)
+        restaurant = Restaurant.objects.get(user=user)
     except Restaurant.DoesNotExist:
-        return Response({"message": "Restaurant does not exists."})
+        return Response({"message": "Restaurant does not exists."}, status=status.HTTP_404_NOT_FOUND)
     
 
+    if request.method == 'GET':
+        restaurant_withdrawals = RestaurantWithdrawal.objects.filter(user=user)
+        serializer = RestaurantWithdrawalSerializer(restaurant_withdrawals, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     
-    
-    return Response({"message": "Restaurant withdrawal view is working"})
+    elif request.method == 'POST':
+        
+        data = request.data
+
+        res = {
+            "user": user.id,
+            **data
+        }
+
+        serializer = RestaurantWithdrawalSerializer(data=res)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return Response({"message": "Http method not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def retaurant_withdrawal_detail_view(request, pk):
+    
+    user = request.user
+
     if request.user.role != "chef":
         return Response({"messge": "User must be a restaurant or chef"}, status=status.HTTP_401_UNAUTHORIZED)
-    return Response({"message": "Restaurant withdrawal detail view is working"})
+
+    try:
+        restaurant_withdrawal = RestaurantWithdrawal.objects.get(user=user, pk=pk)
+    except RestaurantWithdrawal.DoesNotExist:
+        return Response({"message": "Restaurant Withdrawal does not exists."})
+    
+    if request.method == 'GET':
+        serializer = RestaurantWithdrawalSerializer(restaurant_withdrawal)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    elif request.method == 'PUT':
+        data = request.data
+        serializer = RestaurantWithdrawalSerializer(restaurant_withdrawal, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    elif request.method == 'DELETE':
+        restaurant_withdrawal.delete()
+        return Response({"message": "Restaurant withdrawal history deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+    return Response({"message": "Http method not allowed"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 

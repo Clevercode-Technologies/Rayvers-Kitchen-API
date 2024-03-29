@@ -88,16 +88,34 @@ class UserAddressSerializer(serializers.ModelSerializer):
         ]
 
 
+class UserSerializerShort(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "username",
+            "email",
+            "is_staff",
+            "is_active",
+            "is_superuser",
+            "password",
+            "role"
+        ]
+
+
 class RestaurantWithdrawalSerializer(serializers.ModelSerializer):
     class Meta:
         model = RestaurantWithdrawal
         fields = [
             'id',
-            'restaurant',
-            'user',
             'account_bank',
+            'account_number',
             'amount',
             'currency',
             'narration',
             'reference',
+            'restaurant',
+            'user',
         ]

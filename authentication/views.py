@@ -379,7 +379,9 @@ class CustomAuthToken(APIView):
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated, IsUserVerified])
 def logoutView(request):
+    user = request.user
     # Check if the Authorization header is present in the request
+
     if 'Authorization' in request.headers:
         # Extract the token from the Authorization header
         auth_header = request.headers['Authorization']
@@ -389,9 +391,12 @@ def logoutView(request):
         try:
             user_token = Token.objects.get(key=token)
             user_token.delete()
-            return Response({"detail": "Logged out successfully."}, status=status.HTTP_200_OK)
         except Token.DoesNotExist:
             return Response({"detail": "Invalid token."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        token, created = Token.objects.get_or_create(user=user)
+
+        return Response({"detail": "Logged out successfully."}, status=status.HTTP_200_OK)
     else:
         return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
 

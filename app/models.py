@@ -236,21 +236,34 @@ class Dish(models.Model):
 
 
 class RestaurantWithdrawal(models.Model):
-    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name="restaurant_withdrawal")
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="restaurant_user_withdrawal")
-    account_bank = models.CharField(max_length=200, blank=True, null=False)
-    amount = models.IntegerField()
-    currency = models.CharField(max_length=3, blank=True, null=False)
-    narration = models.TextField(blank=True, null=False)
-    reference = models.CharField(max_length=200, blank=True, null=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="restaurant_user_withdrawal", blank=True)
+    account_bank = models.CharField(max_length=200, blank=True, null=True)
+    account_number = models.CharField(max_length=200, blank=True, null=True)
+    amount = models.IntegerField(blank=True, null=True)
+    currency = models.CharField(max_length=3, blank=True, null=True)
+    narration = models.TextField(blank=True, null=True)
+    reference = models.CharField(max_length=200, blank=True, null=True)
 
     def __str__(self) -> str:
-        return self.user.email + " __ " + self.restaurant.name
+        return self.user.email
+    
+    @property
+    def restaurant(self):
+        _restaurant = Restaurant.objects.get(user=self.user)
+
+        return {
+            "id": _restaurant.id,
+            "name": _restaurant.name,
+            "description": _restaurant.description,
+            "ratings": _restaurant.ratings,
+            "image_url": _restaurant.image_url,
+            "address": _restaurant.address,
+            "balance": _restaurant.balance,
+        }
     
     @property
     def get_payment_info(self):
         details = {
-            "restaurant_name": self.restaurant.name,
             "user_email": self.user.email,
             "account_bank": self.account_bank,
             "amount": self.amount,
