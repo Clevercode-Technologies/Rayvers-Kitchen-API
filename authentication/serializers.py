@@ -4,6 +4,8 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
 from .models import UserProfile, UserAddress
 
+from app.models import RestaurantWithdrawal
+
 User = get_user_model()
 
 class CustomAuthTokenSerializer(serializers.Serializer):
@@ -86,4 +88,16 @@ class UserAddressSerializer(serializers.ModelSerializer):
         ]
 
 
-
+class RestaurantWithdrawalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RestaurantWithdrawal
+        fields = [
+            'id',
+            'restaurant',
+            'user',
+            'account_bank',
+            'amount',
+            'currency',
+            'narration',
+            'reference',
+        ]

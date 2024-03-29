@@ -8,6 +8,13 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
+
+class ImageURLSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.ImageURL
+        fields = ['id', 'url']
+
+
 class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -34,10 +41,7 @@ class ImageSerializer(serializers.ModelSerializer):
         fields = ['id', 'file', 'label']
 
 
-class ImageURLSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.ImageURL
-        fields = ['id', 'url']
+
 
 class DishSerializer(serializers.ModelSerializer):
     # Assuming you want to read the images
@@ -253,9 +257,22 @@ class DriverSerializer(serializers.ModelSerializer):
 # A serializer for ordered dishes
 class OrderedDishSerializer(serializers.ModelSerializer):
     images = ImageSerializer(many=True, read_only=True)
+    image_urls = ImageURLSerializer(many=True, read_only=True)
     class Meta:
         model = models.Dish
-        fields = ['id', 'name', 'time_duration', 'description', 'price', 'restaurant', 'ratings','restaurant_details', 'get_category', 'images']
+        fields = [
+            'id', 
+            'name', 
+            'time_duration', 
+            'description', 
+            'price', 
+            'restaurant', 
+            'ratings',
+            'restaurant_details', 
+            'get_category', 
+            'images', 
+            'image_urls'
+        ]
 
 
 
