@@ -3,6 +3,45 @@
 
 Welcome to the coolest API in town! Here, we take authentication and user profiles to a whole new level. Buckle up and let the fun begin!
 
+---
+
+> ## Reference
+1. [Token Generation](#token-generation)
+1. [Logout](#logout)
+1. [User Profile](#user-profile)
+1. [Create New user](#create-new-user)
+1. [Verify User](#verify-user)
+1. [Reset Password](#reset-password)
+1. [Create Driver](#create-driver)
+1. [Login The Driver](#login-the-driver)
+1. [Create Restaurant](#create-restaurant)
+1. [Login The Restaurant](#login-the-restaurant)
+1. [Change User Password](#change-user-password)
+1. [Changer Driver & Kitchen IDs](#change-user-driver-and-kitchen-ids)
+1. [Update Restaurant](#get-and-update-restaurant-profile-information)
+1. [Deduct From Restaurant Balance](#how-to-deduct-from-restaurant-balance)
+1. [Save Withdrawal History](#save-restaurant-withdrawal-history)
+1. [Update Driver](#get-and-update-driver-profile-information)
+1. [List of Restaurants & Dishes](#list-of-restaurants-and-dishes)
+1. [Ingredients](#ingredients)
+1. [Dishes](#dishes)
+1. [Categories](#categories)
+1. [Pagination](#pagination)
+1. [❌ Payment Integration With Stripe - no longer required](#payment-integration-with-stripe)
+1. [Create Orders](#create-orders)
+1. [Get Rescent Order Items](#get-rescent-order-items)
+1. [Using Query Parameters to determine the nature of response](#using-query-parameters-to-determine-the-nature-of-response)
+1. [Rating dishes](#rating-dishes)
+1. [Get Rating for a single Dish](#get-the-rating-data-for-a-particular-dish)
+1. [Rating Restaurants](#rating-restaurants)
+1. [Get Rating for a single Restaurant](#get-the-rating-data-for-a-particular-restaurant)
+1. [Rating Drivers](#rating-drivers)
+1. [Get Rating for a single Driver](#get-the-rating-data-for-a-particular-driver)
+1. [Analtics - Restaurants/Drivers](#get-the-analytics-data-for-a-particular-driver-or-restaurant)
+2. 
+
+---
+
 ## Token Generation 🔐
 
 ### `POST /auth/token/`
