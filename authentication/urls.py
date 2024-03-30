@@ -35,10 +35,16 @@ urlpatterns = [
 
     # Restaurant
     path('restaurants/me/', secondary_views.get_restaurant_profile, name="restaurant_profile"),
+    
+    # Restaurant withdrawal views
+    path("restaurants/me/withdrawals/", secondary_views.retaurant_withdrawal_list_view, name="retaurant_withdrawal_list_view"),
+    path("restaurants/me/withdrawals/<int:pk>/", secondary_views.retaurant_withdrawal_detail_view, name="retaurant_withdrawal_detail_view"),
     path('restaurants/me/deduct/', secondary_views.update_restaurant_balance, name="update_restaurant_profile_balance"),
+
     path("restaurants/token/", secondary_views.login_restaurant, name="login_restaurant"),
     path("restaurants/", secondary_views.create_restaurant, name="create_restaurant"),
     path("restaurants/analytics/", secondary_views.restaurant_analytics, name="restaurant_analytics"),
+    
 ]
 
 

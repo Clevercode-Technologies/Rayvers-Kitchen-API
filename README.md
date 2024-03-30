@@ -530,6 +530,151 @@ If, on the other hand, the request was successful, the `amount` value sent will 
 
 ```
 
+## Save restaurant withdrawal history
+After the deductions have been made in the restaurant it is only meaningful to send
+the request update the withdrawal history of the restaurant.
+This can be achieved thus:
+### Endpoint /auth/restaurants/me/withdrawals/ POST and GET
+A POST request will send the list of withdrawals made by a particular restaurant given 
+the token is correct. Note that, like every other restaurant view, only restaurant users
+can make this request to the backend. Note that this is actually the withdrawal deduction made from 
+flutterwave.
+
+### GET Response - An Array of withdrawal history:
+```json
+[
+    {
+        "id": 2,
+        "account_bank": "9001",
+        "account_number": "54534543490",
+        "amount": 600,
+        "currency": "NGN",
+        "narration": "Payment for things",
+        "reference": "XYJKSGJJAHHSHJKSJ",
+        "restaurant": {
+            "id": 1,
+            "name": "",
+            "description": "",
+            "ratings": 0,
+            "image_url": null,
+            "address": "",
+            "balance": 0.0
+        },
+        "user": 1
+    },
+    {
+        "id": 3,
+        "account_bank": "044",
+        "account_number": null,
+        "amount": 200,
+        "currency": "NGN",
+        "narration": "Payment for things",
+        "reference": "XYJKSGJJAHHSHJKSJ",
+        "restaurant": {
+            "id": 1,
+            "name": "",
+            "description": "",
+            "ratings": 0,
+            "image_url": null,
+            "address": "",
+            "balance": 0.0
+        },
+        "user": 1
+    },
+    {
+        "id": 4,
+        "account_bank": "9001",
+        "account_number": "78967767667",
+        "amount": 600,
+        "currency": "NGN",
+        "narration": "Payment for things",
+        "reference": "XYJKSGJJAHHSHJKSJ",
+        "restaurant": {
+            "id": 1,
+            "name": "",
+            "description": "",
+            "ratings": 0,
+            "image_url": null,
+            "address": "",
+            "balance": 0.0
+        },
+        "user": 1
+    }
+]
+
+
+```
+
+## POST Request:
+The POST request only requires five items in the payload as seen below:
+
+```json
+{
+  "account_bank": "9001",
+  "account_number": "54534543490",
+  "amount": 600,
+  "currency": "NGN",
+  "narration": "Payment for things"
+}
+```
+
+## Detail PUT and DELETE request --- 
+### Endpoint /auth/restaurants/me/withdrawals/(id)/ PUT and GET and DELETE
+
+This returns a single item from the withdrawal history as:
+
+```json
+
+{
+        "id": 2,
+        "account_bank": "9001",
+        "account_number": "54534543490",
+        "amount": 600,
+        "currency": "NGN",
+        "narration": "Payment for things",
+        "reference": "XYJKSGJJAHHSHJKSJ",
+        "restaurant": {
+            "id": 1,
+            "name": "",
+            "description": "",
+            "ratings": 0,
+            "image_url": null,
+            "address": "",
+            "balance": 0.0
+        },
+        "user": 1
+    }
+
+```
+The endpoint takes in the `id` of a single item in the withdrawal history and 
+returns it as the above json object.
+
+A `DELETE` operation can also be performed on the withdrawal history by calling the `DELETE` HTTP Method.
+
+
+
+
+### Error Response:
+
+```json
+{"messge": "User must be a restaurant or chef"}
+{"message": "Restaurant does not exists."}
+{"message": "Http method not allowed"}
+{"message": "Restaurant Withdrawal does not exists."}
+
+
+```
+
+
+## Successful Response:
+
+```json
+{"message": "Restaurant withdrawal history deleted successfully"}
+```
+A successful response could also return the object created and a successful
+status code of 200 OK Response.
+
+###
 
 
 

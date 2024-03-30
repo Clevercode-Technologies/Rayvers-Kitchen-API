@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import User, UserAddress, UserProfile
+from app.models import RestaurantWithdrawal
 from rest_framework.authtoken.models import Token
 from django import forms
 from django.contrib import admin
@@ -126,6 +127,7 @@ class UserAdmin(BaseUserAdmin):
 admin.site.register(User, UserAdmin)
 admin.site.register(UserAddress)
 admin.site.register(UserProfile)
+admin.site.register(RestaurantWithdrawal)
 # admin.site.unregister(Token)
 
 
