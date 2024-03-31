@@ -34,7 +34,7 @@ class Restaurant(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     kitchen_id = models.CharField(_("Kitchen id"), max_length=20, blank=True, null=False)
     image_url = models.CharField(max_length=2000, blank=True, null=True)
-    image = models.ImageField(verbose_name="restauarant image", upload_to="restaurant/", blank=True, null=True)
+    image = models.ImageField(verbose_name="restauarant image", upload_to="restaurant/", blank=True)
     name = models.CharField(max_length=255)
     description = models.TextField()
     address = models.TextField(blank=True)
@@ -171,7 +171,7 @@ class Dish(models.Model):
     ]
     image_urls = models.ManyToManyField(ImageURL, related_name="image_urls", blank=True)
     name = models.CharField(max_length=255, unique=True)
-    images = models.ManyToManyField(Image, related_name='dish_images', blank=True, null=True)
+    images = models.ManyToManyField(Image, related_name='dish_images', blank=True)
     description = models.TextField(blank=False, null=False)
     delivery_options = models.CharField(choices=DELIVERY_OPTIONS, max_length=5, default="free")
     time_duration = models.IntegerField(verbose_name="Time it takes to deliver.", help_text="In minutes.", default=0, blank=False, null=False)
