@@ -171,7 +171,7 @@ class Dish(models.Model):
     ]
     image_urls = models.ManyToManyField(ImageURL, related_name="image_urls", blank=True)
     name = models.CharField(max_length=255, unique=True)
-    images = models.ManyToManyField(Image, related_name='dish_images')
+    images = models.ManyToManyField(Image, related_name='dish_images', blank=True, null=True)
     description = models.TextField(blank=False, null=False)
     delivery_options = models.CharField(choices=DELIVERY_OPTIONS, max_length=5, default="free")
     time_duration = models.IntegerField(verbose_name="Time it takes to deliver.", help_text="In minutes.", default=0, blank=False, null=False)
