@@ -160,9 +160,9 @@ class RestaurantSerializer(serializers.ModelSerializer):
             'ratings',
             'image',
             'address',
-            "_dishes",
             "image_url",
             "balance",
+            "_dishes"
         ]
 
 
