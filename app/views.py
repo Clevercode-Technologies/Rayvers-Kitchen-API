@@ -469,7 +469,7 @@ class RestaurantViewDetails(APIView):
         try:
             restaurant = models.Restaurant.objects.get(pk=pk)
             # Get all the dishes under this category
-            dishes = models.Dish.objects.filter(category__id=pk).order_by("-pk")
+            dishes = models.Dish.objects.filter(restaurant__id=pk).order_by("-pk")
 
             # Serialize the paginated dishes
             dishes_serializer = serializers.DishSerializer(dishes, many=True)
@@ -482,7 +482,7 @@ class RestaurantViewDetails(APIView):
                 "name": serializer.data.get("name"),
                 "ratings": serializer.data.get("ratings"),
                 "address": serializer.data.get("address"),
-                "_dishes": serializer.data.get("_dishes"),
+                "_dishes": dishes_serializer.data,
             }
             return Response(restaurant_details, status=status.HTTP_200_OK)
         except models.Restaurant.DoesNotExist:

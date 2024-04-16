@@ -352,7 +352,7 @@ class Driver(models.Model):
     name = models.CharField(_("Driver Name"), max_length=100, blank=True, null=False)
 
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, blank=True, null=True)
-    vehicle_image = models.ImageField(verbose_name="vehicle image", upload_to="driver/", blank=False, null=True)
+    vehicle_image = models.ImageField(verbose_name="vehicle image", upload_to="driver/", blank=True, null=True)
     vehicle_image_url = models.CharField(max_length=2000, blank=True, null=True)
     vehicle_color = models.CharField(max_length=40, blank=True, null=True)
     vehicle_description = models.TextField(blank=True, null=False)

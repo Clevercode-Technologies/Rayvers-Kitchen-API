@@ -750,7 +750,8 @@ Payload should look like this:
   "vehicle_color": "Gold",
   "vehicle_description": "Vehicle Description",
   "vehicle_number": "GLU23HS",
-  "available": true
+  "available": true,
+  
 }
 ```
 

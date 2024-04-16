@@ -354,6 +354,7 @@ def get_driver_profile(request):
             "vehicle_number": serializer.data.get("vehicle_number"),
             "available": serializer.data.get("available"),
             "profile_details": serializer.data.get("profile_details"),
+            "vehicle_image_url": serializer.data.get("vehicle_image_url"),
             "permissions": {
                 "is_superuser": user.is_superuser,
                 "is_driver": user.role == "logistics",
@@ -366,7 +367,8 @@ def get_driver_profile(request):
         data = request.data
         # name, description, image, address
         if data.get("driver_id"):
-            return Response({"message":"You are not allowed to update driver id via this route"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({
+                "message":"You are not allowed to update driver id via this route"}, status=status.HTTP_401_UNAUTHORIZED)
         serializer = DriverSerializer(driver_profile, data=data)
         if serializer.is_valid(raise_exception=True):
             serializer.save()
