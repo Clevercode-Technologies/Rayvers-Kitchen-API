@@ -45,8 +45,11 @@ INSTALLED_APPS = [
     # Third Parties Apps
     'cloudinary_storage',
     'cloudinary',
+
     "rest_framework",
     "rest_framework.authtoken",
+
+    "corsheaders",
 
     # User Defined Apps
     "app",
@@ -59,6 +62,14 @@ CLOUDINARY_STORAGE = {
     'API_SECRET': config('CLOUDINARY_API_SECRET')
 }
 
+
+CORS_ALLOWED_ORIGINS = [
+    "https://rayvers-kitchen-api.vercel.app",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+
 # CUSTOM USER MODEL
 AUTH_USER_MODEL = 'authentication.User'
 
@@ -67,6 +78,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     'whitenoise.middleware.WhiteNoiseMiddleware', #add whitenoise
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
