@@ -59,8 +59,8 @@ class UserProfileModelTest(TestCase):
 
     def test_get_image_url_property(self):
         # Check the get_image_url property
-        self.user.profile.profile_picture = 'path/to/image.jpg'
-        expected_url = self.user.profile.profile_picture.url
+        self.user.profile.image_url = 'path/to/image.jpg'
+        expected_url = self.user.profile.image_url
         self.assertEqual(self.user.profile.get_image_url, expected_url)
 
     def test_create_token_signal(self):
