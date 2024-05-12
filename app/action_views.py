@@ -404,4 +404,3 @@ def payment_intent_stripe(request):
     except Exception as e:
         return Response({"message": f"Something went wrong: {e}"}, status=status.HTTP_400_BAD_REQUEST)
 
-

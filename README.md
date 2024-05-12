@@ -3,6 +3,43 @@
 
 Welcome to the coolest API in town! Here, we take authentication and user profiles to a whole new level. Buckle up and let the fun begin!
 
+---
+
+ ## Reference
+1. [Token Generation](#token-generation)
+1. [Logout](#logout)
+1. [User Profile](#user-profile)
+1. [Create New user](#create-new-user)
+1. [Verify User](#verify-user)
+1. [Reset Password](#reset-password)
+1. [Create Driver](#create-driver)
+1. [Login The Driver](#login-the-driver)
+1. [Create Restaurant](#create-restaurant)
+1. [Login The Restaurant](#login-the-restaurant)
+1. [Change User Password](#change-user-password)
+1. [Changer Driver & Kitchen IDs](#change-user-driver-and-kitchen-ids)
+1. [Update Restaurant](#get-and-update-restaurant-profile-information)
+1. [Deduct From Restaurant Balance](#how-to-deduct-from-restaurant-balance)
+1. [Save Withdrawal History](#save-restaurant-withdrawal-history)
+1. [Update Driver](#get-and-update-driver-profile-information)
+1. [List of Restaurants & Dishes](#list-of-restaurants-and-dishes)
+1. [Ingredients](#ingredients)
+1. [Dishes](#dishes)
+1. [Categories](#categories)
+1. [Pagination](#pagination)
+1. [❌ Payment Integration With Stripe - no longer required](#payment-integration-with-stripe)
+1. [Create Orders](#create-orders)
+1. [Get Rescent Order Items](#get-rescent-order-items)
+1. [Using Query Parameters to determine the nature of response](#using-query-parameters-to-determine-the-nature-of-response)
+1. [Rating dishes](#rating-dishes)
+1. [Get Rating for a single Dish](#get-the-rating-data-for-a-particular-dish)
+1. [Rating Restaurants](#rating-restaurants)
+1. [Get Rating for a single Restaurant](#get-the-rating-data-for-a-particular-restaurant)
+1. [Rating Drivers](#rating-drivers)
+1. [Get Rating for a single Driver](#get-the-rating-data-for-a-particular-driver)
+1. [Analtics - Restaurants/Drivers](#get-the-analytics-data-for-a-particular-driver-or-restaurant)
+---
+
 ## Token Generation 🔐
 
 ### `POST /auth/token/`
@@ -32,8 +69,8 @@ Generate a magic token to access our wonderland. Send your email and password to
 
 ```
 
-
 ## Logout 🚪
+
 ## POST /auth/logout/
 Time to say goodbye. Use this endpoint to log out gracefully and secure the castle.
 ### Request:
@@ -48,7 +85,10 @@ Time to say goodbye. Use this endpoint to log out gracefully and secure the cast
 ```
 Farewell, brave adventurer! Your session has ended.
 
+
 ## User Profile 🧑‍🚀
+
+
 ## GET /auth/users/me/
 Retrieve your superhero profile details. Only for the chosen ones with a valid token.
 
@@ -96,6 +136,7 @@ Request:
 ```
 
 # Create New User 🦸‍♂️
+  </summary>
 ## POST /auth/users/
 Join the league of extraordinary individuals. Create your account and become a hero!
 
@@ -123,8 +164,8 @@ Join the league of extraordinary individuals. Create your account and become a h
 
 Pro Tip: Don't forget your token; it's the secret sauce to unlock the treasures!
 
-
 ## Verify User
+</summary>
 POST /auth/users/verify/
 A code will be send the user's email
 The user_id must be sent along the code
@@ -181,7 +222,10 @@ If the code is incorrect, you'll get a variety of responses:
 
 ```
 
+
 ## Reset Password
+
+  
 This is the endpoint for the forget password functionality
 
 ## POST /auth/users/reset/password/
@@ -208,8 +252,10 @@ In case of an error, any of the following format is sent back to user FOR INCORR
 {"message": "Encountered an issue sending email. Retry!", "user_id": 3}
 ```
 
-
 ## Reset Password with Code
+</summary>
+
+  
 ### POST /auth/users/reset/password/code/
 
 Here, we require a valid user_id, verification code, password and re_password fields to reset the password
@@ -252,6 +298,8 @@ In case of an error, any of the following format is sent back to user.
 
 
 ## Create Driver
+</summary>
+  
 In order to create driver you must provide `email` and `password`.
 Note that only restaurants and admins have the permissions to create drivers.
 You must have the authorization token in the header when attempting to create a driver.
@@ -288,6 +336,8 @@ After driver has been created, a verification code will be sent to the provided 
 ```
 
 ## Login the driver
+</summary>
+  
 After the driver has been verified, he can log in with his`driver_id` and `password`.
 ### Endpoint: /auth/drivers/token/ POST
 
@@ -309,10 +359,9 @@ After the driver has been verified, he can log in with his`driver_id` and `passw
 
 ```
 
-
-
-
 ## Create Restaurant
+</summary>
+  
 In order to create restaurant you must provide email and password
 
 Note that only admins have the permissions to create restaurants.
@@ -350,6 +399,7 @@ After restaurant has been created, a verification code will be sent to the provi
 ```
 
 ## Login the restaurant
+  
 After the restaurant has been verified, he can log in with his`kitchen_id` and `password`.
 ### Endpoint: /auth/restaurants/token/ POST
 
@@ -372,6 +422,7 @@ After the restaurant has been verified, he can log in with his`kitchen_id` and `
 ```
 
 ## Change User Password
+  
 In order to change users password, the user token must be provided in the Authorization header.
 ## Endpoint /auth/users/change/password/ POST
 ### Payload
@@ -403,6 +454,7 @@ The following response will be received if an error occured:
 Some other password validation error will also occur when user password does not meet the validation score.
 
 ## Change User Driver and Kitchen IDs
+
 In order to change users password, the user token must be provided in the Authorization header.
 This endpoint changes the Ids for both kitchen and driver ids.
 It can also change the username of the customer
@@ -427,9 +479,10 @@ The following response will be received if an error occured:
 {"username": ["A user with username already exists. "]}
 {"username": ["User does not exist."]}
 ```
+  
 
-
-## Get and Update Restaurant Profile information
+## Get and Update Restaurant Profile information  
+  
 To get restaurant info, you need to provide a valid token in the authorization header.
 And you must ensure that user is a restaurant/kitchen. If it's not a restaurant you will receive a permission denied message.
 
@@ -488,8 +541,8 @@ The following response will be received if an error occured:
 
 Some other error responses will also occur if the user data do not meet the validation score.
 
-
 ## How to Deduct The Restaurant Balance
+  
 ### Endpoint /auth/restaurants/me/deduct/ PUT
 In order to properly use this deduct endpoint, you must send an `amount` value from the following
 payload:
@@ -531,6 +584,7 @@ If, on the other hand, the request was successful, the `amount` value sent will 
 ```
 
 ## Save restaurant withdrawal history
+  
 After the deductions have been made in the restaurant it is only meaningful to send
 the request update the withdrawal history of the restaurant.
 This can be achieved thus:
@@ -674,11 +728,11 @@ A `DELETE` operation can also be performed on the withdrawal history by calling 
 A successful response could also return the object created and a successful
 status code of 200 OK Response.
 
+
 ###
 
-
-
 ## Get and Update Driver Profile information
+  
 To get driver info, you need to provide a valid token in the authorization header.
 And you must ensure that user is a driver/logistics. If it's not a driver you will receive a permission denied message.
 
@@ -715,6 +769,7 @@ Some other error responses will also occur if the user data do not meet the vali
 
 
 # List of Restaurants and Dishes
+  
 For all endpoints, the client must make request with a valid token in the Authorization header.
 
 ## Restaurants
@@ -835,12 +890,9 @@ The response below will be given if the request was successful:
 
 ```
 
-
-
-
-
 ## Ingredients
-
+</summary>
+  
 ### /api/ingredients/ GET, POST
 
 The ingredients endpoint retrieves all the ingredients in the database.
@@ -883,8 +935,6 @@ The `image_url` field is optional.
 
 ### /api/ingredients/(id)/ GET, PUT, DELETE
 The above endpoint retrieves, update or delete a single instance of ingredient in the database.
-
-
 
 ## Dishes
 
@@ -1132,8 +1182,11 @@ The delete and the put requests are used for updating or permanently deleting th
 
 The PUT request has a payload similar to that of the POST request, altghough you must ensure that
 that every request ends in a slash (/).
+  
+
 
 # Categories
+  
 ## /api/categories/ GET, POST
 For Categories, the above endpoint can be used to likewise perform POST and GET operations.
 The endpoint retrieves all the category data in the database. It also creates new categories with unique names. This depends on the method used in the request, whether a GET or POST request.
@@ -1180,13 +1233,9 @@ The delete request does not need any payload, only the `id` parameters is receiv
 The PUT request, on the other hand requires a payload, same as the POST request.
 
 
-
-
-
-
 # Pagination
-
-
+</summary>
+  
 The pagination is used with Query Parameters like:
 
 `https://example.com/api/categories/?page_size=10&page=1`
@@ -1196,8 +1245,8 @@ Those are the default values for `page` and `page_size`. There is usually 10 ite
 
 And the `⁠count` attribute is used to tell the number of items there are per page. So with it you can set a limit to your frontend, make it not fetch anymore data once you've arrived at the `⁠count⁠`.
 
-
 # PAYMENT INTEGRATION WITH STRIPE
+  
 In order for payments to be processed a payment intent must be created using strip.
 The client should send an object containing the amount the total amount to be paid 
 to the server with the following url endpoint:
@@ -1245,6 +1294,7 @@ These errors occur when a currencies with relatively low exchange rate like Nair
 
 
 # Create orders
+  
 ## /api/orders/ POST
 When a customer creates an order, the client should send the following payload to the backend service:
 
@@ -1371,6 +1421,7 @@ For each item in the array of items in the payload, the `dish_id` field is the i
 ```
 
 # Get Recent order items
+  
 ## /api/orderitems/ GET
 ## /api/orderitems/(id)/ GET
 
@@ -1436,7 +1487,7 @@ How this works is that the user will see all his orders and can also get the det
 ```
 
 ### Using Query Parameters to determine the nature of response
-
+  
 In order to get the orderitems that should be listed as `history` or `ongoing`, query parameters are used in the request.
 For instance, if you intend on getting historical data of the order items, you should send your request to the orderitems endpoint and a query parameter should be sent as well as follows:
 
@@ -1466,7 +1517,9 @@ In order to change order items fields like `driver` assigned. You need to provid
 The `status` must be one of the following options: -- `completed`, `pending` or `cancelled`. The client must send one of the following as the current status: `completed`, `pending` or `cancelled`.
 When an order is saved, the status of the each item in the items array is `pending`. The client can update it using the above endpoint.
 
+
 ### Assigning Drivers to orderitems via a PUT request.
+  
 ## /api/orderitems/drivers/assign/?option=add_driver PUT
 ## Or
 ## /api/orderitems/drivers/assign/?option=remove_driver PUT
@@ -1510,8 +1563,8 @@ To remove driver, you should send the payload to `/api/orderitems/drivers/assign
 
 ```
 
-
 # Rating dishes
+  
 ## Rate a particular dish
 ## /api/dishes/(id)/ratings/ POST
 
@@ -1553,8 +1606,8 @@ If, similarly, a dish with the underlying `id` does not exist, an error will als
 }
 ```
 
-
 ## Get the rating data for a particular dish
+  
 ## /api/dishes/(id)/ratings/ GET
 In order to retrieve all the rating data for a particular dish, the client should make a get request to the above endpoint. The rating data consists of the `number` of rating, `text` or recommendation of user, `user_data` which is the author's details and `dish` information.
 
@@ -1590,6 +1643,7 @@ The above response is an array of objects. Each object consists of each user's r
 Note that it is only the review that is approved by the admin will show.
 
 # Rating restaurants
+  
 ## Rate a particular restaurant
 ## /api/ingredients/ POST GET
 
@@ -1640,8 +1694,8 @@ If, similarly, a restaurant with the underlying `id` does not exist, an error wi
 }
 ```
 
-
 ## Get the rating data for a particular restaurant
+  
 ## /api/restaurants/(id)/ratings/ GET
 In order to retrieve all the rating data for a particular restaurant, the client should make a get request to the above endpoint. The rating data consists of the `number` of rating, `text` or recommendation of user, `user_data` which is the author's details and `restaurant` information.
 
@@ -1672,9 +1726,10 @@ The above response is an array of objects. Each object consists of each user's r
 
 
 
+# Rating drivers
+  
 <!-- Rating Driver -->
 
-# Rating drivers
 ## Rate a particular driver
 ## /api/drivers/(id)/ratings/ POST
 
@@ -1718,6 +1773,7 @@ If, similarly, a driver with the underlying `id` does not exist, an error will a
 
 
 ## Get the rating data for a particular driver
+  
 ## /api/drivers/(id)/ratings/ GET
 In order to retrieve all the rating data for a particular driver, the client should make a get request to the above endpoint. The rating data consists of the `number` of rating, `text` or recommendation of user, `user_data` which is the author's details and `driver` information.
 
@@ -1781,9 +1837,8 @@ In order to retrieve all the rating data for a particular driver, the client sho
 The above response is an array of objects. Each object consists of each user's review.
 
 
-
 # Get the Analytics data for a particular Driver or Restaurant
-
+  
 ## Restaurant
 ## /auth/restaurants/analytics/ GET
 
@@ -1835,5 +1890,9 @@ If the driver passes the test of authentication, a response is given as thus:
 }
 
 ```
+
+
+
+
 
 
